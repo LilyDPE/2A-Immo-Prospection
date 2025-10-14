@@ -1,0 +1,3639 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>DPE Pro MEGA ULTIME - 2A Immobilier</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary-color: #04264b;
+            --secondary-color: #1e5a8e;
+            --accent-color: #00a99d;
+            --success-color: #38ef7d;
+            --warning-color: #fdb913;
+            --danger-color: #e31e24;
+            --light-bg: #f5f7fa;
+            --card-shadow: 0 2px 15px rgba(4, 38, 75, 0.08);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--light-bg);
+            overflow-x: hidden;
+        }
+
+        /* === ÉCRAN DE CONNEXION === */
+        .login-screen {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .login-logo {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .login-title {
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e5e5ea;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(4, 38, 75, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(4, 38, 75, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(4, 38, 75, 0.4);
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* === ÉCRAN PRINCIPAL === */
+        .main-app {
+            display: none;
+            padding-bottom: 70px;
+        }
+
+        .main-app.active {
+            display: block;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 20px 20px 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .user-info {
+            text-align: right;
+            font-size: 0.85em;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .container {
+            padding: 15px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* === MISSION DU JOUR === */
+        .mission-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .mission-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .mission-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .mission-stat {
+            text-align: center;
+            background: rgba(255,255,255,0.15);
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .mission-stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .mission-stat-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .mission-step {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--primary-color);
+            position: relative;
+        }
+
+        .mission-step.completed {
+            opacity: 0.6;
+            border-left-color: var(--success-color);
+        }
+
+        .mission-step.current {
+            border-left-color: var(--warning-color);
+            box-shadow: 0 4px 20px rgba(253, 185, 19, 0.2);
+        }
+
+        .step-number {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 35px;
+            height: 35px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .step-number.completed {
+            background: var(--success-color);
+        }
+
+        .step-number.current {
+            background: var(--warning-color);
+        }
+
+        .step-info {
+            margin-bottom: 10px;
+        }
+
+        .step-address {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .step-details {
+            font-size: 0.9em;
+            color: #666;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .step-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .step-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .step-btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .step-btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        /* === DASHBOARD PERSONNEL === */
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .period-selector {
+            display: flex;
+            gap: 5px;
+            background: #f5f5f5;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .period-btn {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .period-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .achievement {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .achievement.unlocked {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.02);
+            animation: achievementPop 0.5s ease;
+        }
+
+        @keyframes achievementPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1.02); }
+        }
+
+        .achievement-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .achievement-name {
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .achievement-progress {
+            font-size: 0.75em;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+
+        /* === CONTACTS === */
+        .contact-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: var(--card-shadow);
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .contact-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .contact-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .contact-phone {
+            color: var(--primary-color);
+            font-size: 0.95em;
+            margin-top: 3px;
+        }
+
+        .contact-address {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .contact-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .contact-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .contact-btn-call {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .contact-btn-note {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .reminder-badge {
+            background: #fff3e0;
+            color: #f57c00;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        /* === PHOTOS === */
+        .photo-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e5ea;
+        }
+
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .photo-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-delete {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .add-photo-btn {
+            aspect-ratio: 1;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            background: #f9f9f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: #999;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .add-photo-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        /* === NOTES VOCALES === */
+        .voice-note-section {
+            background: #f0f7ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .voice-note {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .voice-note:last-child {
+            margin-bottom: 0;
+        }
+
+        .voice-play-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .voice-note-text {
+            flex: 1;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .voice-note-duration {
+            font-size: 0.8em;
+            color: #999;
+        }
+
+        .record-voice-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .record-voice-btn.recording {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* === CARTE === */
+        #mapScreen {
+            padding: 0;
+        }
+
+        #mapContainer {
+            height: calc(100vh - 140px);
+            width: 100%;
+            position: relative;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .map-filter-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 250px;
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+        }
+
+        .map-filter-panel h4 {
+            margin-bottom: 12px;
+            color: var(--primary-color);
+            font-size: 1em;
+        }
+
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .filter-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .filter-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .map-btn {
+            background: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 1.3em;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-btn:active {
+            transform: scale(0.95);
+        }
+
+        .map-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .map-legend {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            font-size: 0.85em;
+            max-width: calc(100% - 20px);
+        }
+
+        .map-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .map-legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .map-legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .marker-new {
+            background-color: var(--primary-color);
+            border: 2px solid white;
+        }
+
+        .marker-interested {
+            background-color: var(--success-color);
+            border: 2px solid white;
+        }
+
+        .marker-visited-other {
+            background-color: var(--warning-color);
+            border: 2px solid white;
+        }
+
+        .marker-visited-me {
+            background-color: #999;
+            border: 2px solid white;
+        }
+
+        .marker-burned {
+            background-color: #666;
+            border: 2px solid white;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            padding: 0;
+        }
+
+        .leaflet-popup-content {
+            margin: 0;
+            width: 280px !important;
+        }
+
+        .popup-content {
+            padding: 15px;
+        }
+
+        .popup-address {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .popup-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .popup-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .popup-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .popup-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .popup-btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .popup-btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .popup-btn-info {
+            background: #2196f3;
+            color: white;
+        }
+
+        .popup-btn-full {
+            grid-column: 1 / -1;
+        }
+
+        /* === RADAR MODE === */
+        .radar-notification {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 1001;
+            max-width: 90%;
+            animation: slideDown 0.5s ease;
+            display: none;
+        }
+
+        .radar-notification.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .radar-text {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .radar-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .radar-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* === STYLES COMMUNS === */
+        .search-card, .results-header, .filter-section, .route-card, .legend-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, var(--success-color) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 14px;
+            width: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-geo {
+            background: linear-gradient(135deg, var(--accent-color) 0%, #92fe9d 100%);
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .legend-card {
+            background: #f8f9fa;
+            border: 2px solid #e5e5ea;
+        }
+
+        .legend-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+
+        .legend-items {
+            display: grid;
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+        }
+
+        .legend-sample {
+            width: 40px;
+            height: 30px;
+            border-radius: 6px;
+            border-left: 4px solid;
+            flex-shrink: 0;
+        }
+
+        .legend-sample.new {
+            background: white;
+            border-left-color: var(--primary-color);
+        }
+
+        .legend-sample.interested {
+            background: #f0fff4;
+            border-left-color: #38ef7d;
+        }
+
+        .legend-sample.visited-other {
+            background: #fffbf0;
+            border-left-color: #fdb913;
+            opacity: 0.7;
+        }
+
+        .legend-sample.visited-me {
+            background: #f5f5f5;
+            border-left-color: #999;
+            opacity: 0.6;
+        }
+
+        .legend-sample.burned {
+            background: #f5f5f5;
+            border-left-color: #666;
+            opacity: 0.4;
+        }
+
+        .results-counter {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .counter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .counter-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .counter-badge.new {
+            background: var(--primary-color);
+        }
+
+        .counter-badge.seen {
+            background: #999;
+        }
+
+        .geo-options {
+            display: none;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .geo-options.active {
+            display: block;
+        }
+
+        .radius-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .radius-btn {
+            padding: 8px 15px;
+            border: 2px solid #e5e5ea;
+            border-radius: 20px;
+            background: white;
+            color: #666;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .radius-btn.active {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .dpe-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--primary-color);
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .dpe-card.new {
+            border-left-color: var(--primary-color);
+            background: white;
+            opacity: 1;
+        }
+
+        .dpe-card.interested-by-me {
+            border-left-color: #38ef7d;
+            background: #f0fff4;
+            opacity: 1;
+        }
+
+        .dpe-card.visited-by-other {
+            border-left-color: #fdb913;
+            background: #fffbf0;
+            opacity: 0.7;
+        }
+
+        .dpe-card.visited-by-me {
+            border-left-color: #999;
+            background: #f5f5f5;
+            opacity: 0.6;
+        }
+
+        .dpe-card.burned {
+            border-left-color: #666;
+            background: #f5f5f5;
+            opacity: 0.4;
+            filter: grayscale(30%);
+        }
+
+        .dpe-card.hidden-visited {
+            display: none;
+        }
+
+        .dpe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+
+        .dpe-address {
+            font-weight: 600;
+            font-size: 1.05em;
+            color: #1d1d1f;
+            flex: 1;
+        }
+
+        .dpe-city {
+            font-size: 0.9em;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .status-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .badge-new {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-interested-me {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .badge-visited-other {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge-visited-me {
+            background: #e0e0e0;
+            color: #616161;
+        }
+
+        .badge-burned {
+            background: #bdbdbd;
+            color: #424242;
+        }
+
+        .classe-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 1em;
+            flex-shrink: 0;
+        }
+
+        .classe-A { background: #00a651; color: white; }
+        .classe-B { background: #50b748; color: white; }
+        .classe-C { background: #c8d200; color: white; }
+        .classe-D { background: #fef200; color: black; }
+        .classe-E { background: #fdb913; color: black; }
+        .classe-F { background: #f36e21; color: white; }
+        .classe-G { background: #e31e24; color: white; }
+        .classe-NA { background: #999; color: white; }
+
+        .dpe-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+            font-size: 0.9em;
+        }
+
+        .info-item {
+            color: #666;
+        }
+
+        .info-item strong {
+            color: #333;
+        }
+
+        .shared-notes-section {
+            background: #f0f7ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .shared-note {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .shared-note:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .note-author {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 0.9em;
+        }
+
+        .note-date {
+            color: #999;
+            font-size: 0.8em;
+        }
+
+        .note-text {
+            margin-top: 5px;
+            color: #333;
+        }
+
+        .dpe-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e5ea;
+        }
+
+        .status-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .status-btn {
+            padding: 6px 12px;
+            border: 2px solid #e5e5ea;
+            border-radius: 20px;
+            background: white;
+            color: #666;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .status-btn.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .note-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e5ea;
+            border-radius: 10px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 60px;
+            margin-top: 10px;
+        }
+
+        .admin-dashboard {
+            display: none;
+        }
+
+        .admin-dashboard.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .user-activity-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .activity-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .activity-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .activity-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: none;
+            color: #8e8e93;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .nav-label {
+            font-size: 0.7em;
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            display: none;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .label-help {
+            font-weight: 400;
+            color: #666;
+            font-size: 0.85em;
+            margin-top: 3px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 15px;
+            border: 2px solid #e5e5ea;
+            border-radius: 20px;
+            background: white;
+            color: #666;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--primary-color);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .toggle-label {
+            font-size: 0.9em;
+            color: #333;
+            font-weight: 500;
+        }
+
+        @media (max-width: 600px) {
+            .map-filter-panel {
+                display: none;
+            }
+            
+            .map-filter-panel.mobile-open {
+                display: block;
+                max-width: calc(100% - 20px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ÉCRAN DE CONNEXION -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-card">
+            <div class="login-logo">🏠</div>
+            <h1 class="login-title">DPE Pro ULTIME</h1>
+            <p class="login-subtitle">2A Immobilier - Version MEGA</p>
+            
+            <div class="error-message" id="loginError"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="votre-email@2a-immobilier.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    🔐 Se connecter
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- APPLICATION PRINCIPALE -->
+    <div class="main-app" id="mainApp">
+        <div class="header">
+            <div class="header-top">
+                <h1>🏠 DPE Pro ULTIME</h1>
+                <div class="user-info">
+                    <div class="user-name" id="userName">Utilisateur</div>
+                    <button class="btn-logout" onclick="logout()">Déconnexion</button>
+                </div>
+            </div>
+            <p>2A Immobilier - Prospection collaborative</p>
+        </div>
+
+        <!-- Radar Notification -->
+        <div class="radar-notification" id="radarNotification">
+            <div class="radar-text"></div>
+            <div class="radar-actions">
+                <button class="radar-btn" style="background: white; color: var(--primary-color);" onclick="dismissRadar()">Plus tard</button>
+                <button class="radar-btn" style="background: var(--success-color); color: white;" onclick="goToRadarBien()">Y aller 🚗</button>
+            </div>
+        </div>
+
+        <!-- Screen 1: Recherche -->
+        <div class="screen active" id="searchScreen">
+            <div class="container">
+                <div class="search-card">
+                    <button class="btn btn-geo" onclick="toggleGeoSearch()">
+                        📍 Rechercher autour de moi
+                    </button>
+
+                    <div class="geo-options" id="geoOptions">
+                        <label>Rayon de recherche</label>
+                        <div class="radius-buttons">
+                            <button class="radius-btn" onclick="selectRadius(0.1)">100m</button>
+                            <button class="radius-btn" onclick="selectRadius(0.5)">500m</button>
+                            <button class="radius-btn active" onclick="selectRadius(1)">1 km</button>
+                            <button class="radius-btn" onclick="selectRadius(5)">5 km</button>
+                            <button class="radius-btn" onclick="selectRadius(10)">10 km</button>
+                        </div>
+                        <button class="btn btn-primary" style="margin-top: 15px;" onclick="searchByGeolocation()">
+                            🎯 Lancer la recherche géolocalisée
+                        </button>
+                        <div style="background: #e3f2fd; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.9em; color: #1976d2; display: none;" id="geoInfo"></div>
+                    </div>
+
+                    <div style="text-align: center; margin: 15px 0; color: #999; font-size: 0.9em;">OU</div>
+
+                    <div class="form-group">
+                        <label for="codePostal">
+                            📫 Code(s) Postal(aux)
+                            <div class="label-help">Plusieurs codes séparés par des virgules</div>
+                        </label>
+                        <input type="text" id="codePostal" value="76260" placeholder="Ex: 76260, 76600">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="annee">📅 Année</label>
+                        <select id="annee">
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="classeFilter">⚡ Classe énergétique</label>
+                        <select id="classeFilter">
+                            <option value="">Toutes</option>
+                            <option value="F,G">F et G uniquement</option>
+                            <option value="E,F,G">E, F et G</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="searchDPE()">
+                        🔍 Rechercher les DPE
+                    </button>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Recherche en cours...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 2: Résultats -->
+        <div class="screen" id="resultsScreen">
+            <div class="container">
+                <div class="legend-card">
+                    <h4>📋 Légende des statuts</h4>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <div class="legend-sample new"></div>
+                            <span>🆕 Nouveau bien (non traité)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-sample interested"></div>
+                            <span>⭐ Vous êtes intéressé</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-sample visited-other"></div>
+                            <span>👁️ Vu par un collègue</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-sample visited-me"></div>
+                            <span>✅ Vous avez visité</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-sample burned"></div>
+                            <span>🔥 Bien "brûlé" (vu par tous)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-header" id="resultsHeader"></div>
+                
+                <div class="filter-section" id="cityFilterSection" style="display: none;">
+                    <h4>🏙️ Filtrer par commune</h4>
+                    <div class="filter-buttons" id="cityFilters"></div>
+                </div>
+
+                <div id="resultsList"></div>
+            </div>
+        </div>
+
+        <!-- Screen 3: Carte ULTIME -->
+        <div class="screen" id="mapScreen">
+            <div id="mapContainer">
+                <div id="map"></div>
+                
+                <div class="map-filter-panel" id="mapFilterPanel">
+                    <h4>🔍 Filtres</h4>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filterNew" checked onchange="applyMapFilters()">
+                        <div class="filter-dot marker-new"></div>
+                        <label for="filterNew">Nouveaux</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filterInterested" checked onchange="applyMapFilters()">
+                        <div class="filter-dot marker-interested"></div>
+                        <label for="filterInterested">Intéressés</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filterVisitedOther" checked onchange="applyMapFilters()">
+                        <div class="filter-dot marker-visited-other"></div>
+                        <label for="filterVisitedOther">Vus par collègue</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filterVisitedMe" checked onchange="applyMapFilters()">
+                        <div class="filter-dot marker-visited-me"></div>
+                        <label for="filterVisitedMe">Vus par moi</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filterBurned" onchange="applyMapFilters()">
+                        <div class="filter-dot marker-burned"></div>
+                        <label for="filterBurned">Biens brûlés</label>
+                    </div>
+                </div>
+
+                <div class="map-controls">
+                    <button class="map-btn" onclick="toggleFilterPanel()" title="Filtres">
+                        🎛️
+                    </button>
+                    <button class="map-btn" onclick="centerOnUser()" title="Me localiser">
+                        📍
+                    </button>
+                    <button class="map-btn" onclick="fitAllMarkers()" title="Voir tous les biens">
+                        🔍
+                    </button>
+                    <button class="map-btn" id="heatmapBtn" onclick="toggleHeatmap()" title="Vue chaleur">
+                        🔥
+                    </button>
+                    <button class="map-btn" id="drawBtn" onclick="toggleDrawMode()" title="Dessiner une zone">
+                        ✏️
+                    </button>
+                    <button class="map-btn" onclick="surpriseMe()" title="Surprise moi !">
+                        🎲
+                    </button>
+                    <button class="map-btn" id="radarBtn" onclick="toggleRadarMode()" title="Mode Radar">
+                        📡
+                    </button>
+                </div>
+
+                <div class="map-legend" id="mapLegend">
+                    <div class="map-legend-item">
+                        <div class="map-legend-dot marker-new"></div>
+                        <span>Nouveau</span>
+                    </div>
+                    <div class="map-legend-item">
+                        <div class="map-legend-dot marker-interested"></div>
+                        <span>Intéressé</span>
+                    </div>
+                    <div class="map-legend-item">
+                        <div class="map-legend-dot marker-visited-other"></div>
+                        <span>Vu par collègue</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 4: Mission du Jour -->
+        <div class="screen" id="missionScreen">
+            <div class="container">
+                <div class="mission-header">
+                    <div class="mission-title">🎯 MISSION DU JOUR</div>
+                    <p>Votre itinéraire optimisé pour aujourd'hui</p>
+                    <div class="mission-stats">
+                        <div class="mission-stat">
+                            <div class="mission-stat-value" id="missionTotalBiens">0</div>
+                            <div class="mission-stat-label">Biens</div>
+                        </div>
+                        <div class="mission-stat">
+                            <div class="mission-stat-value" id="missionDistance">0 km</div>
+                            <div class="mission-stat-label">Distance</div>
+                        </div>
+                        <div class="mission-stat">
+                            <div class="mission-stat-value" id="missionDuration">0h</div>
+                            <div class="mission-stat-label">Durée</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary btn-small" onclick="generateMission()">
+                        🚀 Générer ma mission
+                    </button>
+                    <button class="btn btn-success btn-small" onclick="startMission()">
+                        ▶️ Démarrer
+                    </button>
+                    <button class="btn btn-warning btn-small" onclick="exportMissionPDF()">
+                        📄 Export PDF
+                    </button>
+                </div>
+
+                <div id="missionList"></div>
+            </div>
+        </div>
+
+        <!-- Screen 5: Dashboard Personnel -->
+        <div class="screen" id="dashboardScreen">
+            <div class="container">
+                <div class="dashboard-card">
+                    <div class="dashboard-header">
+                        <div class="dashboard-title">📊 Mon Dashboard</div>
+                        <div class="period-selector">
+                            <button class="period-btn" onclick="changePeriod('jour')">Jour</button>
+                            <button class="period-btn active" onclick="changePeriod('semaine')">Semaine</button>
+                            <button class="period-btn" onclick="changePeriod('mois')">Mois</button>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="mySearches">0</div>
+                            <div class="stat-label">Recherches</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="myVisits">0</div>
+                            <div class="stat-label">Visites</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="myInterested">0</div>
+                            <div class="stat-label">Intéressés</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="myConversionRate">0%</div>
+                            <div class="stat-label">Conversion</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="myKm">0</div>
+                            <div class="stat-label">Km parcourus</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="myHours">0h</div>
+                            <div class="stat-label">Temps terrain</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3 style="color: var(--primary-color); margin-bottom: 15px;">🏆 Achievements</h3>
+                    <div class="achievement-grid">
+                        <div class="achievement unlocked">
+                            <div class="achievement-icon">🎉</div>
+                            <div class="achievement-name">Première visite</div>
+                        </div>
+                        <div class="achievement" id="achievement10visits">
+                            <div class="achievement-icon">💯</div>
+                            <div class="achievement-name">10 visites</div>
+                            <div class="achievement-progress">0/10</div>
+                        </div>
+                        <div class="achievement" id="achievement50visits">
+                            <div class="achievement-icon">⭐</div>
+                            <div class="achievement-name">50 visites</div>
+                            <div class="achievement-progress">0/50</div>
+                        </div>
+                        <div class="achievement" id="achievement100visits">
+                            <div class="achievement-icon">👑</div>
+                            <div class="achievement-name">100 visites</div>
+                            <div class="achievement-progress">0/100</div>
+                        </div>
+                        <div class="achievement" id="achievement1day">
+                            <div class="achievement-icon">🔥</div>
+                            <div class="achievement-name">10 en 1 jour</div>
+                            <div class="achievement-progress">0/10</div>
+                        </div>
+                        <div class="achievement" id="achievement5cities">
+                            <div class="achievement-icon">🏙️</div>
+                            <div class="achievement-name">5 communes</div>
+                            <div class="achievement-progress">0/5</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 6: Contacts -->
+        <div class="screen" id="contactsScreen">
+            <div class="container">
+                <div class="search-card">
+                    <h2 style="color: var(--primary-color); margin-bottom: 20px;">📞 Mes Contacts</h2>
+                    
+                    <button class="btn btn-primary btn-small" style="margin-bottom: 15px;" onclick="addNewContact()">
+                        ➕ Ajouter un contact
+                    </button>
+
+                    <div id="contactsList"></div>
+
+                    <div class="empty-state" id="contactsEmpty" style="display: none;">
+                        <div class="empty-icon">📞</div>
+                        <p>Aucun contact enregistré</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 7: Dashboard Admin -->
+        <div class="screen admin-dashboard" id="adminScreen">
+            <div class="container">
+                <div class="search-card">
+                    <h2 style="color: var(--primary-color); margin-bottom: 20px;">📊 Dashboard Administrateur</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalUsers">3</div>
+                            <div class="stat-label">Utilisateurs</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalSearches">0</div>
+                            <div class="stat-label">Recherches</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalVisits">0</div>
+                            <div class="stat-label">Visites</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalInterested">0</div>
+                            <div class="stat-label">Intéressés</div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin: 30px 0 15px 0; color: #333;">👥 Activité des utilisateurs</h3>
+                    <div id="userActivityList"></div>
+
+                    <h3 style="margin: 30px 0 15px 0; color: #333;">📝 Dernières notes partagées</h3>
+                    <div id="recentNotesList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-item active" onclick="switchScreen('search')">
+                <span class="nav-icon">🔍</span>
+                <span class="nav-label">Recherche</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('results')">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Résultats</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('map')">
+                <span class="nav-icon">🗺️</span>
+                <span class="nav-label">Carte</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('mission')">
+                <span class="nav-icon">🎯</span>
+                <span class="nav-label">Mission</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('dashboard')">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Stats</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('contacts')">
+                <span class="nav-icon">📞</span>
+                <span class="nav-label">Contacts</span>
+            </button>
+            <button class="nav-item admin-only" id="adminNavBtn" style="display: none;" onclick="switchScreen('admin')">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Admin</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Input caché pour les photos -->
+    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoUpload(event)">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION FIREBASE
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDtwxmL0PciBpdadVu4enNCsO8PZK6_UNA",
+            authDomain: "dpe-pro-2a-immo.firebaseapp.com",
+            projectId: "dpe-pro-2a-immo",
+            storageBucket: "dpe-pro-2a-immo.firebasestorage.app",
+            messagingSenderId: "392895190727",
+            appId: "1:392895190727:web:dfb5aa9d32d3ded479d0e2",
+            measurementId: "G-X3CEF7KEDZ"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // ==========================================
+        // VARIABLES GLOBALES
+        // ==========================================
+        let currentUser = null;
+        let currentUserData = null;
+        let currentData = [];
+        let filteredData = [];
+        const communeCache = new Map();
+        let userLocation = null;
+        let searchRadius = 1;
+        let isGeoSearch = false;
+        let activeCityFilter = '';
+        let hideVisitedItems = false;
+
+        // Variables Carte
+        let map = null;
+        let markers = [];
+        let allMarkersData = [];
+        let userMarker = null;
+        let markerClusterGroup = null;
+        let heatmapLayer = null;
+        let isHeatmapMode = false;
+        let drawControl = null;
+        let drawnItems = null;
+        let isDrawMode = false;
+
+        // Variables Mission
+        let currentMission = [];
+        let currentMissionStep = 0;
+        let radarMode = false;
+        let radarInterval = null;
+        let nearbyBien = null;
+
+        // Variables Dashboard
+        let currentPeriod = 'semaine';
+        let userStats = {
+            searches: 0,
+            visits: 0,
+            interested: 0,
+            conversionRate: 0,
+            km: 0,
+            hours: 0
+        };
+
+        // Variables Contacts
+        let userContacts = [];
+
+        // Variables Mode Hors-ligne
+        let offlineData = {
+            dpeCached: [],
+            notesCached: [],
+            pendingActions: []
+        };
+
+        // ==========================================
+        // AUTHENTIFICATION
+        // ==========================================
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                showError('Email ou mot de passe incorrect');
+            }
+        });
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadUserData();
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainApp').classList.add('active');
+                document.getElementById('userName').textContent = currentUserData.name;
+                
+                if (currentUserData.role === 'admin') {
+                    document.getElementById('adminNavBtn').style.display = 'block';
+                }
+
+                // Charger données offline si disponibles
+                loadOfflineData();
+                
+                // Démarrer la synchronisation
+                startOfflineSync();
+
+                showToast('Bienvenue ' + currentUserData.name + ' ! 👋');
+            } else {
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('mainApp').classList.remove('active');
+            }
+        });
+
+        async function loadUserData() {
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            if (userDoc.exists) {
+                currentUserData = userDoc.data();
+            } else {
+                currentUserData = {
+                    name: currentUser.email.split('@')[0],
+                    email: currentUser.email,
+                    role: 'user'
+                };
+                await db.collection('users').doc(currentUser.uid).set(currentUserData);
+            }
+        }
+
+        function logout() {
+            auth.signOut();
+            stopRadarMode();
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => errorDiv.classList.remove('show'), 5000);
+        }
+
+        // ==========================================
+        // RECHERCHE DPE
+        // ==========================================
+        function toggleGeoSearch() {
+            const geoOptions = document.getElementById('geoOptions');
+            geoOptions.classList.toggle('active');
+        }
+
+        function selectRadius(km) {
+            searchRadius = km;
+            document.querySelectorAll('.radius-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        async function searchByGeolocation() {
+            if (!navigator.geolocation) {
+                showToast('Géolocalisation non supportée');
+                return;
+            }
+
+            document.getElementById('geoInfo').style.display = 'block';
+            document.getElementById('geoInfo').textContent = '📍 Obtention de votre position...';
+
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                userLocation = {
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude
+                };
+
+                document.getElementById('geoInfo').textContent = `✅ Position trouvée ! Recherche dans ${searchRadius} km...`;
+                
+                isGeoSearch = true;
+                await performSearch();
+            }, (error) => {
+                showToast('Impossible d\'obtenir votre position');
+                document.getElementById('geoInfo').style.display = 'none';
+            });
+        }
+
+        async function searchDPE() {
+            isGeoSearch = false;
+            await performSearch();
+        }
+
+        async function performSearch() {
+            const annee = document.getElementById('annee').value;
+            const classeFilter = document.getElementById('classeFilter').value;
+            
+            document.getElementById('loading').style.display = 'block';
+            currentData = [];
+
+            try {
+                if (isGeoSearch && userLocation) {
+                    // Recherche géolocalisée
+                    const params = new URLSearchParams({
+                        latitude: userLocation.lat,
+                        longitude: userLocation.lon,
+                        rayon: searchRadius * 1000, // Conversion en mètres
+                        annee_etablissement_dpe: annee,
+                        limit: 100
+                    });
+
+                    if (classeFilter) {
+                        params.append('classe_consommation_energie', classeFilter);
+                    }
+
+                    const response = await fetch(`https://data.ademe.fr/data-fair/api/v1/datasets/dpe-v2-logements-existants/lines?${params}`);
+                    const data = await response.json();
+                    currentData = data.results;
+                } else {
+                    // Recherche par code postal
+                    const codesPostaux = document.getElementById('codePostal').value.split(',').map(c => c.trim());
+                    
+                    for (const cp of codesPostaux) {
+                        const params = new URLSearchParams({
+                            code_postal: cp,
+                            annee_etablissement_dpe: annee,
+                            limit: 50
+                        });
+
+                        if (classeFilter) {
+                            params.append('classe_consommation_energie', classeFilter);
+                        }
+
+                        const response = await fetch(`https://data.ademe.fr/data-fair/api/v1/datasets/dpe-v2-logements-existants/lines?${params}`);
+                        const data = await response.json();
+                        currentData = currentData.concat(data.results);
+                    }
+                }
+
+                // Enrichir avec noms de communes
+                await enrichWithCityNames();
+
+                // Charger les notes de tous les utilisateurs
+                await loadAllNotes();
+
+                // Sauvegarder en offline
+                saveOfflineData();
+
+                // Afficher résultats
+                displayResults();
+                
+                // Logger la recherche
+                await logActivity('search', { count: currentData.length });
+
+                switchScreen('results');
+            } catch (error) {
+                console.error('Erreur recherche:', error);
+                showToast('Erreur lors de la recherche');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function enrichWithCityNames() {
+            for (const dpe of currentData) {
+                if (!dpe.nom_commune && dpe.code_insee_commune_actualise) {
+                    const insee = dpe.code_insee_commune_actualise;
+                    
+                    if (communeCache.has(insee)) {
+                        dpe.nom_commune = communeCache.get(insee);
+                    } else {
+                        try {
+                            const response = await fetch(`https://geo.api.gouv.fr/communes/${insee}`);
+                            const commune = await response.json();
+                            dpe.nom_commune = commune.nom;
+                            communeCache.set(insee, commune.nom);
+                        } catch (error) {
+                            dpe.nom_commune = dpe.code_postal || 'Commune inconnue';
+                        }
+                    }
+                }
+            }
+        }
+
+        async function loadAllNotes() {
+            try {
+                const notesSnapshot = await db.collection('dpe_notes').get();
+                const allNotes = {};
+                
+                notesSnapshot.forEach(doc => {
+                    allNotes[doc.id] = doc.data();
+                });
+
+                // Attacher les notes aux DPE
+                currentData.forEach(dpe => {
+                    const dpeId = `${dpe.code_insee_commune_actualise}_${dpe.adresse_bien}`;
+                    if (allNotes[dpeId]) {
+                        dpe.notes = allNotes[dpeId].notes || [];
+                    } else {
+                        dpe.notes = [];
+                    }
+                });
+            } catch (error) {
+                console.error('Erreur chargement notes:', error);
+            }
+        }
+
+        // ==========================================
+        // AFFICHAGE RÉSULTATS
+        // ==========================================
+        function displayResults() {
+            const resultsList = document.getElementById('resultsList');
+            const resultsHeader = document.getElementById('resultsHeader');
+            
+            // Compteurs
+            let nouveaux = 0;
+            let dejaNus = 0;
+
+            currentData.forEach(dpe => {
+                const status = getBienStatus(dpe);
+                if (status === 'new') nouveaux++;
+                else dejaNus++;
+            });
+
+            resultsHeader.innerHTML = `
+                <h3 style="color: var(--primary-color); margin-bottom: 15px;">
+                    🎯 ${currentData.length} DPE trouvés
+                </h3>
+                <div class="results-counter">
+                    <div class="counter-item">
+                        🆕 <span class="counter-badge new">${nouveaux}</span> Nouveaux
+                    </div>
+                    <div class="counter-item">
+                        👁️ <span class="counter-badge seen">${dejaNus}</span> Déjà vus
+                    </div>
+                </div>
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="hideVisited" onchange="toggleHideVisited()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">Masquer les biens déjà vus</span>
+                </div>
+                <button class="btn btn-primary btn-small" style="margin-top: 15px;" onclick="switchScreen('map')">
+                    🗺️ Voir sur la carte
+                </button>
+            `;
+
+            // Extraire communes uniques
+            const communes = [...new Set(currentData.map(d => d.nom_commune).filter(Boolean))];
+            if (communes.length > 1) {
+                displayCityFilters(communes);
+            }
+
+            // Afficher chaque DPE
+            resultsList.innerHTML = '';
+            currentData.forEach(dpe => {
+                const card = createDPECard(dpe);
+                resultsList.appendChild(card);
+            });
+        }
+
+        function displayCityFilters(communes) {
+            const section = document.getElementById('cityFilterSection');
+            const filters = document.getElementById('cityFilters');
+            
+            section.style.display = 'block';
+            filters.innerHTML = '';
+
+            // Bouton "Toutes"
+            const allBtn = document.createElement('button');
+            allBtn.className = 'filter-btn active';
+            allBtn.textContent = 'Toutes';
+            allBtn.onclick = () => filterByCity('');
+            filters.appendChild(allBtn);
+
+            // Boutons par commune
+            communes.forEach(commune => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn';
+                btn.textContent = commune;
+                btn.onclick = () => filterByCity(commune);
+                filters.appendChild(btn);
+            });
+        }
+
+        function filterByCity(city) {
+            activeCityFilter = city;
+            
+            document.querySelectorAll('#cityFilters .filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if ((city === '' && btn.textContent === 'Toutes') || btn.textContent === city) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.dpe-card').forEach(card => {
+                const cardCity = card.dataset.city;
+                if (city === '' || cardCity === city) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function toggleHideVisited() {
+            hideVisitedItems = document.getElementById('hideVisited').checked;
+            
+            document.querySelectorAll('.dpe-card').forEach(card => {
+                const status = card.dataset.status;
+                if (hideVisitedItems && (status === 'visited-by-other' || status === 'visited-by-me' || status === 'burned')) {
+                    if (!card.classList.contains('interested-by-me')) {
+                        card.classList.add('hidden-visited');
+                    }
+                } else {
+                    card.classList.remove('hidden-visited');
+                }
+            });
+        }
+
+        function createDPECard(dpe) {
+            const div = document.createElement('div');
+            const status = getBienStatus(dpe);
+            const dpeId = `${dpe.code_insee_commune_actualise}_${dpe.adresse_bien}`;
+            
+            div.className = `dpe-card ${status}`;
+            div.dataset.city = dpe.nom_commune || '';
+            div.dataset.status = status;
+            div.dataset.lat = dpe.latitude;
+            div.dataset.lon = dpe.longitude;
+
+            const classe = dpe.classe_consommation_energie || 'NA';
+            const surface = dpe.surface_habitable || 'N/A';
+            
+            // Badges de statut
+            let statusBadges = '';
+            const myNotes = (dpe.notes || []).filter(n => n.userId === currentUser.uid);
+            const otherNotes = (dpe.notes || []).filter(n => n.userId !== currentUser.uid);
+            
+            if (status === 'new') {
+                statusBadges = '<span class="status-badge badge-new">🆕 Nouveau</span>';
+            }
+            if (myNotes.some(n => n.status === 'interested')) {
+                statusBadges += '<span class="status-badge badge-interested-me">⭐ Vous êtes intéressé</span>';
+            }
+            if (myNotes.some(n => n.status === 'visited')) {
+                statusBadges += '<span class="status-badge badge-visited-me">✅ Vous avez visité</span>';
+            }
+            if (otherNotes.length > 0) {
+                otherNotes.forEach(note => {
+                    statusBadges += `<span class="status-badge badge-visited-other">👁️ Vu par ${note.userName}</span>`;
+                });
+            }
+            if (status === 'burned') {
+                statusBadges += '<span class="status-badge badge-burned">🔥 Bien brûlé</span>';
+            }
+
+            // Notes partagées
+            let sharedNotesHTML = '';
+            if (dpe.notes && dpe.notes.length > 0) {
+                sharedNotesHTML = '<div class="shared-notes-section">';
+                sharedNotesHTML += '<strong style="font-size: 0.9em;">💬 Notes d\'équipe:</strong>';
+                dpe.notes.forEach(note => {
+                    sharedNotesHTML += `
+                        <div class="shared-note">
+                            <div><span class="note-author">${note.userName}</span> <span class="note-date">${new Date(note.timestamp).toLocaleDateString()}</span></div>
+                            <div class="note-text">${note.text}</div>
+                        </div>
+                    `;
+                });
+                sharedNotesHTML += '</div>';
+            }
+
+            div.innerHTML = `
+                <div class="dpe-header">
+                    <div>
+                        <div class="dpe-address">${dpe.adresse_bien || 'Adresse non disponible'}</div>
+                        <div class="dpe-city">${dpe.nom_commune || dpe.code_postal || ''}</div>
+                        <div class="status-badges">${statusBadges}</div>
+                    </div>
+                    <div class="classe-badge classe-${classe}">${classe}</div>
+                </div>
+
+                <div class="dpe-info">
+                    <div class="info-item">📐 <strong>${surface} m²</strong></div>
+                    <div class="info-item">📅 DPE: ${dpe.date_etablissement_dpe || 'N/A'}</div>
+                </div>
+
+                ${sharedNotesHTML}
+
+                <div class="dpe-actions">
+                    <div class="status-buttons">
+                        <button class="status-btn ${myNotes.some(n => n.status === 'interested') ? 'active' : ''}" onclick="markBien('${dpeId}', 'interested', this)">
+                            ⭐ Intéressé
+                        </button>
+                        <button class="status-btn ${myNotes.some(n => n.status === 'visited') ? 'active' : ''}" onclick="markBien('${dpeId}', 'visited', this)">
+                            ✅ Visité
+                        </button>
+                        <button class="status-btn" onclick="openPhotoUpload('${dpeId}')">
+                            📸 Photo
+                        </button>
+                        <button class="status-btn" onclick="recordVoiceNote('${dpeId}')">
+                            🎤 Note vocale
+                        </button>
+                        <button class="status-btn" onclick="addToMission(${JSON.stringify(dpe).replace(/"/g, '&quot;')})">
+                            🎯 Mission
+                        </button>
+                    </div>
+                    <textarea class="note-input" placeholder="Ajouter une note..." id="note_${dpeId}"></textarea>
+                    <button class="btn btn-primary btn-small" style="margin-top: 10px;" onclick="saveNote('${dpeId}')">
+                        💾 Enregistrer la note
+                    </button>
+                </div>
+            `;
+
+            return div;
+        }
+
+        function getBienStatus(dpe) {
+            if (!dpe.notes || dpe.notes.length === 0) return 'new';
+            
+            const myNotes = dpe.notes.filter(n => n.userId === currentUser.uid);
+            const otherNotes = dpe.notes.filter(n => n.userId !== currentUser.uid);
+            
+            if (myNotes.some(n => n.status === 'interested')) return 'interested-by-me';
+            if (myNotes.some(n => n.status === 'visited')) return 'visited-by-me';
+            if (otherNotes.length >= 2) return 'burned';
+            if (otherNotes.length > 0) return 'visited-by-other';
+            
+            return 'new';
+        }
+
+        async function markBien(dpeId, status, button) {
+            try {
+                const noteRef = db.collection('dpe_notes').doc(dpeId);
+                const noteDoc = await noteRef.get();
+                
+                let notes = [];
+                if (noteDoc.exists) {
+                    notes = noteDoc.data().notes || [];
+                }
+
+                // Trouver ou créer note de l'utilisateur
+                let userNote = notes.find(n => n.userId === currentUser.uid);
+                if (!userNote) {
+                    userNote = {
+                        userId: currentUser.uid,
+                        userName: currentUserData.name,
+                        timestamp: Date.now(),
+                        status: status,
+                        text: ''
+                    };
+                    notes.push(userNote);
+                } else {
+                    userNote.status = status;
+                    userNote.timestamp = Date.now();
+                }
+
+                await noteRef.set({ notes });
+                
+                // Mettre à jour l'UI
+                button.classList.add('active');
+                const card = button.closest('.dpe-card');
+                card.className = `dpe-card ${getBienStatus({ notes })}`;
+                
+                // Logger l'activité
+                await logActivity(status, { dpeId });
+
+                // Vérifier achievements
+                checkAchievements();
+
+                showToast(status === 'interested' ? '⭐ Marqué comme intéressé' : '✅ Marqué comme visité');
+
+                // Rafraîchir les données
+                await loadAllNotes();
+            } catch (error) {
+                console.error('Erreur marquage bien:', error);
+                saveOfflineAction('mark', { dpeId, status });
+                showToast('Action sauvegardée (hors-ligne)');
+            }
+        }
+
+        async function saveNote(dpeId) {
+            const noteText = document.getElementById(`note_${dpeId}`).value.trim();
+            if (!noteText) return;
+
+            try {
+                const noteRef = db.collection('dpe_notes').doc(dpeId);
+                const noteDoc = await noteRef.get();
+                
+                let notes = [];
+                if (noteDoc.exists) {
+                    notes = noteDoc.data().notes || [];
+                }
+
+                let userNote = notes.find(n => n.userId === currentUser.uid);
+                if (!userNote) {
+                    userNote = {
+                        userId: currentUser.uid,
+                        userName: currentUserData.name,
+                        timestamp: Date.now(),
+                        status: 'noted',
+                        text: noteText
+                    };
+                    notes.push(userNote);
+                } else {
+                    userNote.text = noteText;
+                    userNote.timestamp = Date.now();
+                }
+
+                await noteRef.set({ notes });
+                
+                document.getElementById(`note_${dpeId}`).value = '';
+                showToast('💬 Note enregistrée');
+
+                await loadAllNotes();
+                displayResults();
+            } catch (error) {
+                console.error('Erreur sauvegarde note:', error);
+                saveOfflineAction('note', { dpeId, noteText });
+                showToast('Note sauvegardée (hors-ligne)');
+            }
+        }
+
+        // ==========================================
+        // CARTE
+        // ==========================================
+        function initMap() {
+            if (map) return;
+
+            map = L.map('map').setView([49.5, 0.5], 10);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            markerClusterGroup = L.markerClusterGroup({
+                maxClusterRadius: 50,
+                spiderfyOnMaxZoom: true
+            });
+            map.addLayer(markerClusterGroup);
+
+            // Outils de dessin
+            drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+
+            // Géolocalisation utilisateur
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    if (userMarker) {
+                        userMarker.setLatLng([lat, lon]);
+                    } else {
+                        userMarker = L.circleMarker([lat, lon], {
+                            radius: 8,
+                            fillColor: '#2196f3',
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).addTo(map);
+                    }
+
+                    userLocation = { lat, lon };
+
+                    // Mode Radar
+                    if (radarMode) {
+                        checkNearbyBiens();
+                    }
+                });
+            }
+        }
+
+        function displayMarkersOnMap() {
+            initMap();
+            
+            markerClusterGroup.clearLayers();
+            markers = [];
+            allMarkersData = [];
+
+            currentData.forEach(dpe => {
+                if (!dpe.latitude || !dpe.longitude) return;
+
+                const status = getBienStatus(dpe);
+                const dpeId = `${dpe.code_insee_commune_actualise}_${dpe.adresse_bien}`;
+                
+                let markerColor;
+                switch(status) {
+                    case 'interested-by-me': markerColor = '#38ef7d'; break;
+                    case 'visited-by-me': markerColor = '#999'; break;
+                    case 'visited-by-other': markerColor = '#fdb913'; break;
+                    case 'burned': markerColor = '#666'; break;
+                    default: markerColor = '#04264b';
+                }
+
+                const marker = L.circleMarker([dpe.latitude, dpe.longitude], {
+                    radius: 8,
+                    fillColor: markerColor,
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                });
+
+                const classe = dpe.classe_consommation_energie || 'NA';
+                const popupContent = `
+                    <div class="popup-content">
+                        <div class="popup-address">${dpe.adresse_bien}</div>
+                        <div class="popup-info">
+                            <span class="classe-badge classe-${classe}">${classe}</span>
+                            <span>${dpe.surface_habitable || 'N/A'} m²</span>
+                        </div>
+                        <div style="margin: 10px 0; font-size: 0.85em; color: #666;">
+                            ${dpe.nom_commune || dpe.code_postal}
+                        </div>
+                        <div class="popup-actions">
+                            <button class="popup-btn popup-btn-success" onclick="markBien('${dpeId}', 'interested')">
+                                ⭐ Intéressé
+                            </button>
+                            <button class="popup-btn popup-btn-primary" onclick="markBien('${dpeId}', 'visited')">
+                                ✅ Visité
+                            </button>
+                            <button class="popup-btn popup-btn-info popup-btn-full" onclick="openItinerary(${dpe.latitude}, ${dpe.longitude})">
+                                🧭 Itinéraire
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+                marker.dpeData = { ...dpe, status };
+                
+                markerClusterGroup.addLayer(marker);
+                markers.push(marker);
+                allMarkersData.push({ marker, status, dpe });
+            });
+
+            fitAllMarkers();
+        }
+
+        function toggleFilterPanel() {
+            const panel = document.getElementById('mapFilterPanel');
+            panel.classList.toggle('mobile-open');
+        }
+
+        function applyMapFilters() {
+            const showNew = document.getElementById('filterNew').checked;
+            const showInterested = document.getElementById('filterInterested').checked;
+            const showVisitedOther = document.getElementById('filterVisitedOther').checked;
+            const showVisitedMe = document.getElementById('filterVisitedMe').checked;
+            const showBurned = document.getElementById('filterBurned').checked;
+
+            markerClusterGroup.clearLayers();
+
+            allMarkersData.forEach(({ marker, status }) => {
+                let shouldShow = false;
+
+                if (status === 'new' && showNew) shouldShow = true;
+                if (status === 'interested-by-me' && showInterested) shouldShow = true;
+                if (status === 'visited-by-other' && showVisitedOther) shouldShow = true;
+                if (status === 'visited-by-me' && showVisitedMe) shouldShow = true;
+                if (status === 'burned' && showBurned) shouldShow = true;
+
+                if (shouldShow) {
+                    markerClusterGroup.addLayer(marker);
+                }
+            });
+        }
+
+        function centerOnUser() {
+            if (userLocation && map) {
+                map.setView([userLocation.lat, userLocation.lon], 15);
+                showToast('📍 Centré sur votre position');
+            } else {
+                showToast('Position non disponible');
+            }
+        }
+
+        function fitAllMarkers() {
+            if (markers.length === 0) return;
+            
+            const bounds = L.latLngBounds(markers.map(m => m.getLatLng()));
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+
+        function toggleHeatmap() {
+            if (!map) return;
+
+            if (isHeatmapMode) {
+                // Désactiver heatmap
+                if (heatmapLayer) {
+                    map.removeLayer(heatmapLayer);
+                }
+                markerClusterGroup.addTo(map);
+                document.getElementById('heatmapBtn').classList.remove('active');
+                isHeatmapMode = false;
+            } else {
+                // Activer heatmap
+                const heatData = currentData
+                    .filter(d => d.latitude && d.longitude)
+                    .map(d => [d.latitude, d.longitude, 1]);
+
+                heatmapLayer = L.heatLayer(heatData, {
+                    radius: 25,
+                    blur: 15,
+                    maxZoom: 17,
+                    gradient: {
+                        0.0: 'blue',
+                        0.5: 'yellow',
+                        1.0: 'red'
+                    }
+                }).addTo(map);
+
+                map.removeLayer(markerClusterGroup);
+                document.getElementById('heatmapBtn').classList.add('active');
+                isHeatmapMode = true;
+            }
+        }
+
+        function toggleDrawMode() {
+            if (!drawControl) {
+                drawControl = new L.Control.Draw({
+                    edit: {
+                        featureGroup: drawnItems
+                    },
+                    draw: {
+                        polygon: true,
+                        circle: true,
+                        rectangle: true,
+                        polyline: false,
+                        marker: false,
+                        circlemarker: false
+                    }
+                });
+            }
+
+            if (isDrawMode) {
+                map.removeControl(drawControl);
+                document.getElementById('drawBtn').classList.remove('active');
+                isDrawMode = false;
+            } else {
+                map.addControl(drawControl);
+                document.getElementById('drawBtn').classList.add('active');
+                isDrawMode = true;
+
+                map.on(L.Draw.Event.CREATED, (e) => {
+                    const layer = e.layer;
+                    drawnItems.addLayer(layer);
+                    filterMarkersByShape(layer);
+                });
+            }
+        }
+
+        function filterMarkersByShape(shape) {
+            markerClusterGroup.clearLayers();
+
+            allMarkersData.forEach(({ marker, dpe }) => {
+                const latlng = L.latLng(dpe.latitude, dpe.longitude);
+                
+                let isInside = false;
+                if (shape instanceof L.Circle) {
+                    isInside = shape.getLatLng().distanceTo(latlng) <= shape.getRadius();
+                } else if (shape instanceof L.Polygon || shape instanceof L.Rectangle) {
+                    isInside = shape.getBounds().contains(latlng);
+                }
+
+                if (isInside) {
+                    markerClusterGroup.addLayer(marker);
+                }
+            });
+
+            showToast(`${markerClusterGroup.getLayers().length} biens dans la zone`);
+        }
+
+        function openItinerary(lat, lon) {
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+            window.open(url, '_blank');
+        }
+
+        function surpriseMe() {
+            const newBiens = allMarkersData.filter(({ status }) => status === 'new');
+            
+            if (newBiens.length === 0) {
+                showToast('Aucun nouveau bien disponible');
+                return;
+            }
+
+            const randomBien = newBiens[Math.floor(Math.random() * newBiens.length)];
+            map.setView([randomBien.dpe.latitude, randomBien.dpe.longitude], 16);
+            randomBien.marker.openPopup();
+            
+            showToast('🎲 Bien surprise !');
+        }
+
+        // ==========================================
+        // MODE RADAR
+        // ==========================================
+        function toggleRadarMode() {
+            if (radarMode) {
+                stopRadarMode();
+            } else {
+                startRadarMode();
+            }
+        }
+
+        function startRadarMode() {
+            radarMode = true;
+            document.getElementById('radarBtn').classList.add('active');
+            showToast('📡 Mode Radar activé');
+
+            // Vérifier toutes les 5 secondes
+            radarInterval = setInterval(checkNearbyBiens, 5000);
+        }
+
+        function stopRadarMode() {
+            radarMode = false;
+            document.getElementById('radarBtn').classList.remove('active');
+            if (radarInterval) {
+                clearInterval(radarInterval);
+                radarInterval = null;
+            }
+            dismissRadar();
+        }
+
+        function checkNearbyBiens() {
+            if (!userLocation) return;
+
+            const newBiens = currentData.filter(dpe => {
+                if (!dpe.latitude || !dpe.longitude) return false;
+                const status = getBienStatus(dpe);
+                return status === 'new';
+            });
+
+            for (const bien of newBiens) {
+                const distance = calculateDistance(
+                    userLocation.lat, userLocation.lon,
+                    bien.latitude, bien.longitude
+                );
+
+                if (distance <= 0.1) { // 100 mètres
+                    showRadarNotification(bien, distance);
+                    break;
+                }
+            }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Rayon de la Terre en km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function showRadarNotification(bien, distance) {
+            nearbyBien = bien;
+            const notification = document.getElementById('radarNotification');
+            const text = notification.querySelector('.radar-text');
+            
+            text.textContent = `🚨 Bien à ${Math.round(distance * 1000)}m de vous !`;
+            notification.classList.add('show');
+
+            // Vibration si supportée
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+
+        function dismissRadar() {
+            document.getElementById('radarNotification').classList.remove('show');
+            nearbyBien = null;
+        }
+
+        function goToRadarBien() {
+            if (nearbyBien) {
+                openItinerary(nearbyBien.latitude, nearbyBien.longitude);
+                dismissRadar();
+            }
+        }
+
+        // ==========================================
+        // MISSION DU JOUR
+        // ==========================================
+        async function generateMission() {
+            if (!userLocation) {
+                showToast('Position non disponible');
+                return;
+            }
+
+            // Filtrer nouveaux biens dans un rayon de 10km
+            const nearbyBiens = currentData.filter(dpe => {
+                if (!dpe.latitude || !dpe.longitude) return false;
+                const status = getBienStatus(dpe);
+                if (status !== 'new' && status !== 'interested-by-me') return false;
+
+                const distance = calculateDistance(
+                    userLocation.lat, userLocation.lon,
+                    dpe.latitude, dpe.longitude
+                );
+                return distance <= 10;
+            });
+
+            if (nearbyBiens.length === 0) {
+                showToast('Aucun bien dans un rayon de 10 km');
+                return;
+            }
+
+            // Optimiser l'itinéraire (algorithme du plus proche voisin simplifié)
+            currentMission = optimizeRoute(nearbyBiens);
+            currentMissionStep = 0;
+
+            displayMission();
+            showToast('🚀 Mission générée !');
+        }
+
+        function optimizeRoute(biens) {
+            if (biens.length === 0) return [];
+
+            const route = [];
+            let remainingBiens = [...biens];
+            let currentPos = userLocation;
+
+            // Prioriser les biens intéressés
+            remainingBiens.sort((a, b) => {
+                const statusA = getBienStatus(a);
+                const statusB = getBienStatus(b);
+                if (statusA === 'interested-by-me' && statusB !== 'interested-by-me') return -1;
+                if (statusB === 'interested-by-me' && statusA !== 'interested-by-me') return 1;
+                return 0;
+            });
+
+            while (remainingBiens.length > 0 && route.length < 15) {
+                let closestIndex = 0;
+                let closestDistance = Infinity;
+
+                remainingBiens.forEach((bien, index) => {
+                    const distance = calculateDistance(
+                        currentPos.lat, currentPos.lon,
+                        bien.latitude, bien.longitude
+                    );
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestIndex = index;
+                    }
+                });
+
+                const nextBien = remainingBiens[closestIndex];
+                route.push({ ...nextBien, distance: closestDistance });
+                currentPos = { lat: nextBien.latitude, lon: nextBien.longitude };
+                remainingBiens.splice(closestIndex, 1);
+            }
+
+            return route;
+        }
+
+        function displayMission() {
+            const list = document.getElementById('missionList');
+            list.innerHTML = '';
+
+            let totalDistance = 0;
+            currentMission.forEach((bien, index) => {
+                totalDistance += bien.distance || 0;
+
+                const step = document.createElement('div');
+                step.className = `mission-step ${index === currentMissionStep ? 'current' : ''} ${index < currentMissionStep ? 'completed' : ''}`;
+                
+                const classe = bien.classe_consommation_energie || 'NA';
+                const estimatedTime = new Date(Date.now() + (index * 20 * 60000)).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+                step.innerHTML = `
+                    <div class="step-number ${index === currentMissionStep ? 'current' : ''} ${index < currentMissionStep ? 'completed' : ''}">
+                        ${index < currentMissionStep ? '✓' : index + 1}
+                    </div>
+                    <div class="step-info">
+                        <div class="step-address">${bien.adresse_bien}</div>
+                        <div class="step-details">
+                            <span>⏰ ${estimatedTime}</span>
+                            <span class="classe-badge classe-${classe}">${classe}</span>
+                            <span>📏 ${Math.round((bien.distance || 0) * 1000)}m</span>
+                        </div>
+                    </div>
+                    ${index >= currentMissionStep ? `
+                        <div class="step-actions">
+                            <button class="step-btn step-btn-primary" onclick="openItinerary(${bien.latitude}, ${bien.longitude})">
+                                🧭 Y aller
+                            </button>
+                            <button class="step-btn step-btn-success" onclick="completeMissionStep(${index})">
+                                ✅ Terminé
+                            </button>
+                        </div>
+                    ` : ''}
+                `;
+
+                list.appendChild(step);
+            });
+
+            // Mettre à jour les stats
+            document.getElementById('missionTotalBiens').textContent = currentMission.length;
+            document.getElementById('missionDistance').textContent = totalDistance.toFixed(1) + ' km';
+            document.getElementById('missionDuration').textContent = Math.round(currentMission.length * 20 / 60) + 'h';
+        }
+
+        function startMission() {
+            if (currentMission.length === 0) {
+                showToast('Générez d\'abord une mission');
+                return;
+            }
+
+            currentMissionStep = 0;
+            displayMission();
+            
+            const firstBien = currentMission[0];
+            openItinerary(firstBien.latitude, firstBien.longitude);
+            
+            showToast('▶️ Mission démarrée !');
+        }
+
+        function completeMissionStep(stepIndex) {
+            if (stepIndex !== currentMissionStep) return;
+
+            const bien = currentMission[stepIndex];
+            const dpeId = `${bien.code_insee_commune_actualise}_${bien.adresse_bien}`;
+            
+            markBien(dpeId, 'visited');
+            
+            currentMissionStep++;
+            displayMission();
+
+            if (currentMissionStep >= currentMission.length) {
+                showToast('🎉 Mission terminée ! Bravo !');
+            } else {
+                const nextBien = currentMission[currentMissionStep];
+                openItinerary(nextBien.latitude, nextBien.longitude);
+            }
+        }
+
+        function exportMissionPDF() {
+            if (currentMission.length === 0) {
+                showToast('Aucune mission à exporter');
+                return;
+            }
+
+            // Simulation export PDF (nécessite librairie jsPDF)
+            let pdfContent = '🎯 MISSION DU JOUR\n\n';
+            pdfContent += `Date: ${new Date().toLocaleDateString()}\n`;
+            pdfContent += `Total: ${currentMission.length} biens\n\n`;
+
+            currentMission.forEach((bien, index) => {
+                pdfContent += `${index + 1}. ${bien.adresse_bien}\n`;
+                pdfContent += `   Classe: ${bien.classe_consommation_energie || 'N/A'}\n`;
+                pdfContent += `   Distance: ${Math.round((bien.distance || 0) * 1000)}m\n\n`;
+            });
+
+            // Créer un blob et télécharger
+            const blob = new Blob([pdfContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mission_${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+
+            showToast('📄 Mission exportée');
+        }
+
+        // ==========================================
+        // DASHBOARD
+        // ==========================================
+        function changePeriod(period) {
+            currentPeriod = period;
+            
+            document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            loadUserStats();
+        }
+
+        async function loadUserStats() {
+            try {
+                const now = Date.now();
+                let startTime;
+
+                switch(currentPeriod) {
+                    case 'jour':
+                        startTime = now - 24 * 60 * 60 * 1000;
+                        break;
+                    case 'semaine':
+                        startTime = now - 7 * 24 * 60 * 60 * 1000;
+                        break;
+                    case 'mois':
+                        startTime = now - 30 * 24 * 60 * 60 * 1000;
+                        break;
+                }
+
+                const activitiesSnapshot = await db.collection('user_activities')
+                    .where('userId', '==', currentUser.uid)
+                    .where('timestamp', '>=', startTime)
+                    .get();
+
+                let searches = 0;
+                let visits = 0;
+                let interested = 0;
+
+                activitiesSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    switch(data.action) {
+                        case 'search': searches++; break;
+                        case 'visited': visits++; break;
+                        case 'interested': interested++; break;
+                    }
+                });
+
+                userStats.searches = searches;
+                userStats.visits = visits;
+                userStats.interested = interested;
+                userStats.conversionRate = visits > 0 ? Math.round((interested / visits) * 100) : 0;
+
+                // Mettre à jour l'UI
+                document.getElementById('mySearches').textContent = searches;
+                document.getElementById('myVisits').textContent = visits;
+                document.getElementById('myInterested').textContent = interested;
+                document.getElementById('myConversionRate').textContent = userStats.conversionRate + '%';
+
+                // Mettre à jour achievements
+                updateAchievements();
+            } catch (error) {
+                console.error('Erreur chargement stats:', error);
+            }
+        }
+
+        function updateAchievements() {
+            const visits = userStats.visits;
+
+            // 10 visites
+            const ach10 = document.getElementById('achievement10visits');
+            ach10.querySelector('.achievement-progress').textContent = `${Math.min(visits, 10)}/10`;
+            if (visits >= 10) {
+                ach10.classList.add('unlocked');
+            }
+
+            // 50 visites
+            const ach50 = document.getElementById('achievement50visits');
+            ach50.querySelector('.achievement-progress').textContent = `${Math.min(visits, 50)}/50`;
+            if (visits >= 50) {
+                ach50.classList.add('unlocked');
+            }
+
+            // 100 visites
+            const ach100 = document.getElementById('achievement100visits');
+            ach100.querySelector('.achievement-progress').textContent = `${Math.min(visits, 100)}/100`;
+            if (visits >= 100) {
+                ach100.classList.add('unlocked');
+            }
+        }
+
+        function checkAchievements() {
+            // Vérifier si un nouvel achievement est débloqué
+            loadUserStats();
+        }
+
+        async function logActivity(action, data = {}) {
+            try {
+                await db.collection('user_activities').add({
+                    userId: currentUser.uid,
+                    userName: currentUserData.name,
+                    action: action,
+                    timestamp: Date.now(),
+                    data: data
+                });
+            } catch (error) {
+                console.error('Erreur log activité:', error);
+            }
+        }
+
+        // ==========================================
+        // CONTACTS
+        // ==========================================
+        async function loadContacts() {
+            try {
+                const contactsSnapshot = await db.collection('contacts')
+                    .where('userId', '==', currentUser.uid)
+                    .orderBy('timestamp', 'desc')
+                    .get();
+
+                userContacts = [];
+                contactsSnapshot.forEach(doc => {
+                    userContacts.push({ id: doc.id, ...doc.data() });
+                });
+
+                displayContacts();
+            } catch (error) {
+                console.error('Erreur chargement contacts:', error);
+            }
+        }
+
+        function displayContacts() {
+            const list = document.getElementById('contactsList');
+            const empty = document.getElementById('contactsEmpty');
+
+            if (userContacts.length === 0) {
+                list.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            list.innerHTML = '';
+
+            userContacts.forEach(contact => {
+                const card = document.createElement('div');
+                card.className = 'contact-card';
+                
+                card.innerHTML = `
+                    <div class="contact-header">
+                        <div>
+                            <div class="contact-name">${contact.name}</div>
+                            ${contact.phone ? `<div class="contact-phone">📞 ${contact.phone}</div>` : ''}
+                            ${contact.address ? `<div class="contact-address">📍 ${contact.address}</div>` : ''}
+                        </div>
+                    </div>
+                    ${contact.notes ? `<div style="margin-top: 10px; font-size: 0.9em; color: #666;">${contact.notes}</div>` : ''}
+                    ${contact.reminder ? `<div class="reminder-badge">⏰ Rappel: ${new Date(contact.reminder).toLocaleDateString()}</div>` : ''}
+                    <div class="contact-actions">
+                        ${contact.phone ? `<button class="contact-btn contact-btn-call" onclick="callContact('${contact.phone}')">📞 Appeler</button>` : ''}
+                        <button class="contact-btn contact-btn-note" onclick="editContact('${contact.id}')">✏️ Modifier</button>
+                    </div>
+                `;
+
+                list.appendChild(card);
+            });
+        }
+
+        function addNewContact() {
+            const name = prompt('Nom du contact:');
+            if (!name) return;
+
+            const phone = prompt('Téléphone:');
+            const address = prompt('Adresse:');
+            const notes = prompt('Notes:');
+
+            saveContact({ name, phone, address, notes });
+        }
+
+        async function saveContact(contact) {
+            try {
+                await db.collection('contacts').add({
+                    userId: currentUser.uid,
+                    timestamp: Date.now(),
+                    ...contact
+                });
+
+                showToast('✅ Contact enregistré');
+                loadContacts();
+            } catch (error) {
+                console.error('Erreur sauvegarde contact:', error);
+            }
+        }
+
+        function callContact(phone) {
+            window.location.href = `tel:${phone}`;
+        }
+
+        function editContact(contactId) {
+            const contact = userContacts.find(c => c.id === contactId);
+            if (!contact) return;
+
+            const notes = prompt('Notes:', contact.notes || '');
+            if (notes === null) return;
+
+            db.collection('contacts').doc(contactId).update({
+                notes: notes,
+                lastModified: Date.now()
+            });
+
+            showToast('✅ Contact mis à jour');
+            loadContacts();
+        }
+
+        // ==========================================
+        // PHOTOS
+        // ==========================================
+        let currentPhotoDpeId = null;
+
+        function openPhotoUpload(dpeId) {
+            currentPhotoDpeId = dpeId;
+            document.getElementById('photoInput').click();
+        }
+
+        async function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            try {
+                showToast('📸 Upload en cours...');
+
+                const storageRef = storage.ref(`photos/${currentUser.uid}/${currentPhotoDpeId}/${Date.now()}_${file.name}`);
+                await storageRef.put(file);
+                const photoURL = await storageRef.getDownloadURL();
+
+                // Enregistrer référence photo
+                const noteRef = db.collection('dpe_notes').doc(currentPhotoDpeId);
+                const noteDoc = await noteRef.get();
+                
+                let notes = [];
+                if (noteDoc.exists) {
+                    notes = noteDoc.data().notes || [];
+                }
+
+                let userNote = notes.find(n => n.userId === currentUser.uid);
+                if (!userNote) {
+                    userNote = {
+                        userId: currentUser.uid,
+                        userName: currentUserData.name,
+                        timestamp: Date.now(),
+                        photos: [photoURL]
+                    };
+                    notes.push(userNote);
+                } else {
+                    if (!userNote.photos) userNote.photos = [];
+                    userNote.photos.push(photoURL);
+                }
+
+                await noteRef.set({ notes });
+
+                showToast('📸 Photo enregistrée !');
+                await loadAllNotes();
+                displayResults();
+            } catch (error) {
+                console.error('Erreur upload photo:', error);
+                showToast('Erreur upload photo');
+            }
+        }
+
+        // ==========================================
+        // NOTES VOCALES
+        // ==========================================
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let currentVoiceNoteDpeId = null;
+
+        async function recordVoiceNote(dpeId) {
+            currentVoiceNoteDpeId = dpeId;
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showToast('Enregistrement non supporté');
+                return;
+            }
+
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    await saveVoiceNote(audioBlob);
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+                showToast('🎤 Enregistrement... (cliquez à nouveau pour arrêter)');
+            } catch (error) {
+                console.error('Erreur enregistrement:', error);
+                showToast('Erreur microphone');
+            }
+        }
+
+        async function saveVoiceNote(audioBlob) {
+            try {
+                showToast('💾 Sauvegarde...');
+
+                const storageRef = storage.ref(`voice-notes/${currentUser.uid}/${currentVoiceNoteDpeId}/${Date.now()}.wav`);
+                await storageRef.put(audioBlob);
+                const audioURL = await storageRef.getDownloadURL();
+
+                // Enregistrer référence
+                const noteRef = db.collection('dpe_notes').doc(currentVoiceNoteDpeId);
+                const noteDoc = await noteRef.get();
+                
+                let notes = [];
+                if (noteDoc.exists) {
+                    notes = noteDoc.data().notes || [];
+                }
+
+                let userNote = notes.find(n => n.userId === currentUser.uid);
+                if (!userNote) {
+                    userNote = {
+                        userId: currentUser.uid,
+                        userName: currentUserData.name,
+                        timestamp: Date.now(),
+                        voiceNotes: [audioURL]
+                    };
+                    notes.push(userNote);
+                } else {
+                    if (!userNote.voiceNotes) userNote.voiceNotes = [];
+                    userNote.voiceNotes.push(audioURL);
+                }
+
+                await noteRef.set({ notes });
+
+                showToast('🎤 Note vocale enregistrée !');
+                await loadAllNotes();
+                displayResults();
+            } catch (error) {
+                console.error('Erreur sauvegarde note vocale:', error);
+                showToast('Erreur sauvegarde');
+            }
+        }
+
+        // ==========================================
+        // MODE HORS-LIGNE
+        // ==========================================
+        function loadOfflineData() {
+            try {
+                const cached = localStorage.getItem('dpePro_offlineData');
+                if (cached) {
+                    offlineData = JSON.parse(cached);
+                }
+            } catch (error) {
+                console.error('Erreur chargement offline:', error);
+            }
+        }
+
+        function saveOfflineData() {
+            try {
+                offlineData.dpeCached = currentData;
+                offlineData.lastSync = Date.now();
+                localStorage.setItem('dpePro_offlineData', JSON.stringify(offlineData));
+            } catch (error) {
+                console.error('Erreur sauvegarde offline:', error);
+            }
+        }
+
+        function saveOfflineAction(action, data) {
+            offlineData.pendingActions.push({
+                action,
+                data,
+                timestamp: Date.now()
+            });
+            localStorage.setItem('dpePro_offlineData', JSON.stringify(offlineData));
+        }
+
+        async function startOfflineSync() {
+            setInterval(async () => {
+                if (navigator.onLine && offlineData.pendingActions.length > 0) {
+                    for (const action of offlineData.pendingActions) {
+                        try {
+                            if (action.action === 'mark') {
+                                await markBien(action.data.dpeId, action.data.status);
+                            } else if (action.action === 'note') {
+                                await saveNote(action.data.dpeId);
+                            }
+                        } catch (error) {
+                            console.error('Erreur sync:', error);
+                        }
+                    }
+                    offlineData.pendingActions = [];
+                    saveOfflineData();
+                    showToast('✅ Synchronisation terminée');
+                }
+            }, 30000); // Toutes les 30 secondes
+        }
+
+        // ==========================================
+        // NAVIGATION
+        // ==========================================
+        function switchScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+            const screens = {
+                'search': 'searchScreen',
+                'results': 'resultsScreen',
+                'map': 'mapScreen',
+                'mission': 'missionScreen',
+                'dashboard': 'dashboardScreen',
+                'contacts': 'contactsScreen',
+                'admin': 'adminScreen'
+            };
+
+            document.getElementById(screens[screenName]).classList.add('active');
+            event.target.classList.add('active');
+
+            // Actions spécifiques par écran
+            if (screenName === 'map') {
+                if (!map) initMap();
+                displayMarkersOnMap();
+                setTimeout(() => map.invalidateSize(), 100);
+            } else if (screenName === 'dashboard') {
+                loadUserStats();
+            } else if (screenName === 'contacts') {
+                loadContacts();
+            } else if (screenName === 'mission') {
+                if (currentMission.length > 0) {
+                    displayMission();
+                }
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function addToMission(dpe) {
+            if (!currentMission.find(m => m.numero_dpe === dpe.numero_dpe)) {
+                currentMission.push(dpe);
+                showToast('✅ Ajouté à la mission');
+            } else {
+                showToast('Déjà dans la mission');
+            }
+        }
+
+        // ==========================================
+        // INITIALISATION
+        // ==========================================
+        console.log('✅ DPE Pro MEGA ULTIME - Chargé avec succès ! 🚀');
+    </script>
+</body>
+</html>
