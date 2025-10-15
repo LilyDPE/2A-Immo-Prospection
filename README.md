@@ -230,7 +230,7 @@ const firebaseConfig = {
 
 Ce projet est privé et destiné à un usage interne 2A Immo.
 
-Pour toute suggestion ou bug, contactez : support@2aimmo.fr
+Pour toute suggestion ou bug, contactez : contact@2a-immobilier.fr
 
 ## 📄 License
 
@@ -240,15 +240,15 @@ Usage interne uniquement.
 
 ## 👥 Équipe
 
-- **Développement** : Claude (Anthropic)
+- **Développement** : Aurélie 
 - **Product Owner** : 2A Immo
 - **Utilisateurs** : Maud, Sonia, Aurélie
 
 ## 📞 Support
 
-- 📧 Email : support@2aimmo.fr
-- 🌐 Site web : [À compléter]
-- 📱 Téléphone : [À compléter]
+- 📧 Email : contact@2a-immobilier.fr
+- 🌐 Site web : www.2a-immobilier.fr
+- 📱 Téléphone : 06.86.38.62.59
 
 ---
 
