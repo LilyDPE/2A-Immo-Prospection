@@ -1408,39 +1408,73 @@
         async function searchDPE(postalCode) {
             showLoading(true);
             
-            // Enregistrer la recherche
-            await addDoc(collection(db, 'searches'), {
-                userId: window.currentUser.uid,
-                postalCode: postalCode,
-                timestamp: Timestamp.now()
-            });
+            try {
+                // Enregistrer la recherche
+                try {
+                    await addDoc(collection(db, 'searches'), {
+                        userId: window.currentUser.uid,
+                        postalCode: postalCode,
+                        timestamp: Timestamp.now()
+                    });
+                } catch (firestoreError) {
+                    console.warn('Firestore write error (non-blocking):', firestoreError);
+                    alert('⚠️ Impossible d\'enregistrer la recherche. Vérifiez les règles Firestore.\n\nLa recherche va continuer...');
+                }
 
-            // API ADEME pour les DPE
-            const response = await fetch(`https://data.ademe.fr/data-fair/api/v1/datasets/dpe-v2-logements-existants/lines?size=100&select=Adresse_(BAN),Commune_(BAN),Code_postal_(BAN),Etiquette_DPE,Surface_habitable_logement&q=${postalCode}`);
-            const data = await response.json();
-            
-            window.currentResults = data.results || [];
-            
-            // Charger les notes existantes
-            const notesSnapshot = await getDocs(collection(db, 'notes'));
-            const existingNotes = {};
-            notesSnapshot.forEach(doc => {
-                const note = doc.data();
-                const key = `${note.address}_${note.city}`;
-                if (!existingNotes[key]) existingNotes[key] = [];
-                existingNotes[key].push(note);
-            });
-            
-            // Enrichir les résultats avec les notes
-            window.currentResults.forEach(result => {
-                const key = `${result['Adresse_(BAN)']}_${result['Commune_(BAN)']}`;
-                result.notes = existingNotes[key] || [];
-                result.status = determineStatus(result.notes);
-            });
-            
-            displayResults();
-            showLoading(false);
-            showScreen('resultsScreen');
+                // API ADEME pour les DPE
+                console.log('Recherche DPE pour code postal:', postalCode);
+                const response = await fetch(`https://data.ademe.fr/data-fair/api/v1/datasets/dpe-v2-logements-existants/lines?size=100&select=Adresse_(BAN),Commune_(BAN),Code_postal_(BAN),Etiquette_DPE,Surface_habitable_logement&q=${postalCode}`);
+                
+                if (!response.ok) {
+                    throw new Error(`API ADEME error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Données reçues:', data);
+                
+                window.currentResults = data.results || [];
+                
+                if (window.currentResults.length === 0) {
+                    alert(`❌ Aucun DPE trouvé pour le code postal ${postalCode}.\n\nEssayez un autre code postal (ex: 76600, 76260, 76000)`);
+                    showLoading(false);
+                    return;
+                }
+                
+                // Charger les notes existantes
+                try {
+                    const notesSnapshot = await getDocs(collection(db, 'notes'));
+                    const existingNotes = {};
+                    notesSnapshot.forEach(doc => {
+                        const note = doc.data();
+                        const key = `${note.address}_${note.city}`;
+                        if (!existingNotes[key]) existingNotes[key] = [];
+                        existingNotes[key].push(note);
+                    });
+                    
+                    // Enrichir les résultats avec les notes
+                    window.currentResults.forEach(result => {
+                        const key = `${result['Adresse_(BAN)']}_${result['Commune_(BAN)']}`;
+                        result.notes = existingNotes[key] || [];
+                        result.status = determineStatus(result.notes);
+                    });
+                } catch (notesError) {
+                    console.warn('Erreur chargement notes:', notesError);
+                    // Continuer sans les notes
+                    window.currentResults.forEach(result => {
+                        result.notes = [];
+                        result.status = 'new';
+                    });
+                }
+                
+                displayResults();
+                showScreen('resultsScreen');
+                
+            } catch (error) {
+                console.error('Erreur recherche DPE:', error);
+                alert(`❌ Erreur lors de la recherche:\n${error.message}\n\nVérifiez:\n1. Votre connexion Internet\n2. Les règles Firestore\n3. Le code postal (format: 76600)`);
+            } finally {
+                showLoading(false);
+            }
         }
 
         function determineStatus(notes) {
