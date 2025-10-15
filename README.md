@@ -240,7 +240,7 @@ Usage interne uniquement.
 
 ## 👥 Équipe
 
-- **Développement** : Aurélie 
+- **Développement** : Aurélie et Claude
 - **Product Owner** : 2A Immo
 - **Utilisateurs** : Maud, Sonia, Aurélie
 
