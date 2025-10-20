@@ -2024,7 +2024,6 @@
                     dateFin = `${annee}-12-31`;
                 }
 
-                // SIMPLIFIÉ : On récupère TOUS les résultats et on filtre côté client
                 const postalCodesQuery = codesPostaux.map(cp => `code_postal_brut:${cp}`).join(' OR ');
                 let qs = `(${postalCodesQuery}) AND date_etablissement_dpe:[${dateDebut} TO ${dateFin}]`;
                 
@@ -2039,12 +2038,21 @@
 
                 const response = await fetch(`${url}?${params}`);
                 
+                console.log('Response status:', response.status);
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('Erreur API:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
                 }
                 
                 const data = await response.json();
-                console.log('Données reçues:', data);
+                console.log('Données reçues:', data.results ? data.results.length : 0, 'résultats');
+                
+                if (data.error) {
+                    throw new Error(`Erreur API: ${data.error}`);
+                }
+                
                 currentData = data.results || [];
 
                 showToast('Enrichissement des données...');
