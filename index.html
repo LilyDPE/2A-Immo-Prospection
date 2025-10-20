@@ -1951,58 +1951,60 @@
         }
 
         async function searchDPE() {
-            const codePostalInput = document.getElementById('codePostal').value.trim();
-            const annee = document.getElementById('annee').value;
-            const mois = document.getElementById('mois').value;
-            
-            // Récupérer les classes cochées (nouveau système de checkboxes)
-            const toutesLesClasses = document.getElementById('classeTout').checked;
-            let selectedClasses = [];
-            
-            if (!toutesLesClasses) {
-                ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(classe => {
-                    if (document.getElementById(`classe${classe}`).checked) {
-                        selectedClasses.push(classe);
-                    }
-                });
-            }
-
-            if (!codePostalInput) {
-                showToast('Veuillez entrer un code postal');
-                return;
-            }
-
-            const codesPostaux = codePostalInput.split(/[,;\s]+/).map(cp => cp.trim()).filter(cp => cp.length > 0);
-
-            document.getElementById('loading').style.display = 'block';
-
-            const url = 'https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant/lines';
-
-            let dateDebut, dateFin;
-            if (mois) {
-                const lastDay = new Date(annee, parseInt(mois), 0).getDate();
-                dateDebut = `${annee}-${mois}-01`;
-                dateFin = `${annee}-${mois}-${lastDay}`;
-            } else {
-                dateDebut = annee === '2021' ? '2021-07-01' : `${annee}-01-01`;
-                dateFin = `${annee}-12-31`;
-            }
-
-            const postalCodesQuery = codesPostaux.map(cp => `code_postal_brut:${cp}`).join(' OR ');
-            let qs = `(${postalCodesQuery}) AND date_etablissement_dpe:[${dateDebut} TO ${dateFin}]`;
-            
-            // Appliquer le filtre de classes si des classes spécifiques sont sélectionnées
-            if (!toutesLesClasses && selectedClasses.length > 0) {
-                const classFilter = selectedClasses.map(c => `classe_consommation_energie:${c}`).join(' OR ');
-                qs += ` AND (${classFilter})`;
-            }
-
-            const params = new URLSearchParams({
-                size: 1000,
-                qs: qs
-            });
-
             try {
+                const codePostalInput = document.getElementById('codePostal').value.trim();
+                const annee = document.getElementById('annee').value;
+                const mois = document.getElementById('mois').value;
+                
+                // Récupérer les classes cochées (nouveau système de checkboxes)
+                const classeToutEl = document.getElementById('classeTout');
+                const toutesLesClasses = classeToutEl ? classeToutEl.checked : true;
+                let selectedClasses = [];
+                
+                if (!toutesLesClasses) {
+                    ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(classe => {
+                        const el = document.getElementById(`classe${classe}`);
+                        if (el && el.checked) {
+                            selectedClasses.push(classe);
+                        }
+                    });
+                }
+
+                if (!codePostalInput) {
+                    showToast('Veuillez entrer un code postal');
+                    return;
+                }
+
+                const codesPostaux = codePostalInput.split(/[,;\s]+/).map(cp => cp.trim()).filter(cp => cp.length > 0);
+
+                document.getElementById('loading').style.display = 'block';
+
+                const url = 'https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant/lines';
+
+                let dateDebut, dateFin;
+                if (mois) {
+                    const lastDay = new Date(annee, parseInt(mois), 0).getDate();
+                    dateDebut = `${annee}-${mois}-01`;
+                    dateFin = `${annee}-${mois}-${lastDay}`;
+                } else {
+                    dateDebut = annee === '2021' ? '2021-07-01' : `${annee}-01-01`;
+                    dateFin = `${annee}-12-31`;
+                }
+
+                const postalCodesQuery = codesPostaux.map(cp => `code_postal_brut:${cp}`).join(' OR ');
+                let qs = `(${postalCodesQuery}) AND date_etablissement_dpe:[${dateDebut} TO ${dateFin}]`;
+                
+                // Appliquer le filtre de classes si des classes spécifiques sont sélectionnées
+                if (!toutesLesClasses && selectedClasses.length > 0) {
+                    const classFilter = selectedClasses.map(c => `classe_consommation_energie:${c}`).join(' OR ');
+                    qs += ` AND (${classFilter})`;
+                }
+
+                const params = new URLSearchParams({
+                    size: 1000,
+                    qs: qs
+                });
+
                 const response = await fetch(`${url}?${params}`);
                 const data = await response.json();
                 currentData = data.results || [];
@@ -2019,17 +2021,22 @@
                 filteredData = [...currentData];
 
                 // NOUVEAU: Appliquer le filtre de surface habitable
-                const surfaceRef = parseFloat(document.getElementById('surfaceReference').value);
-                const tolerance = parseFloat(document.getElementById('surfaceTolerance').value) || 10;
+                const surfaceRefEl = document.getElementById('surfaceReference');
+                const surfaceTolEl = document.getElementById('surfaceTolerance');
+                
+                if (surfaceRefEl && surfaceTolEl) {
+                    const surfaceRef = parseFloat(surfaceRefEl.value);
+                    const tolerance = parseFloat(surfaceTolEl.value) || 10;
 
-                if (surfaceRef && surfaceRef > 0) {
-                    const minSurface = surfaceRef * (1 - tolerance / 100);
-                    const maxSurface = surfaceRef * (1 + tolerance / 100);
+                    if (surfaceRef && surfaceRef > 0) {
+                        const minSurface = surfaceRef * (1 - tolerance / 100);
+                        const maxSurface = surfaceRef * (1 + tolerance / 100);
 
-                    filteredData = filteredData.filter(dpe => {
-                        const surface = parseFloat(dpe.surface_habitable_logement);
-                        return surface >= minSurface && surface <= maxSurface;
-                    });
+                        filteredData = filteredData.filter(dpe => {
+                            const surface = parseFloat(dpe.surface_habitable_logement);
+                            return surface >= minSurface && surface <= maxSurface;
+                        });
+                    }
                 }
 
                 displayResults();
@@ -2039,8 +2046,8 @@
                 incrementStat('searches');
 
             } catch (error) {
-                showToast('Erreur lors de la recherche');
-                console.error(error);
+                showToast('Erreur lors de la recherche: ' + error.message);
+                console.error('Erreur détaillée:', error);
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
