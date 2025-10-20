@@ -2003,14 +2003,9 @@
                     dateFin = `${annee}-12-31`;
                 }
 
+                // SIMPLIFIÉ : On récupère TOUS les résultats et on filtre côté client
                 const postalCodesQuery = codesPostaux.map(cp => `code_postal_brut:${cp}`).join(' OR ');
                 let qs = `(${postalCodesQuery}) AND date_etablissement_dpe:[${dateDebut} TO ${dateFin}]`;
-                
-                // Appliquer le filtre de classes si des classes spécifiques sont sélectionnées
-                if (!toutesLesClasses && selectedClasses.length > 0) {
-                    const classFilter = selectedClasses.map(c => `classe_consommation_energie:${c}`).join(' OR ');
-                    qs += ` AND (${classFilter})`;
-                }
                 
                 console.log('Query string:', qs);
 
@@ -2030,6 +2025,58 @@
                 const data = await response.json();
                 console.log('Données reçues:', data);
                 currentData = data.results || [];
+
+                showToast('Enrichissement des données...');
+                currentData = await enrichWithCommuneNames(currentData);
+
+                // FILTRAGE CÔTÉ CLIENT - Filtre par classe énergétique
+                if (!toutesLesClasses && selectedClasses.length > 0) {
+                    currentData = currentData.filter(dpe => 
+                        selectedClasses.includes(dpe.classe_consommation_energie)
+                    );
+                    console.log('Après filtre classe:', currentData.length, 'résultats');
+                }
+
+                currentData.sort((a, b) => {
+                    const dateA = new Date(a.date_etablissement_dpe || '1900-01-01');
+                    const dateB = new Date(b.date_etablissement_dpe || '1900-01-01');
+                    return dateB - dateA;
+                });
+
+                filteredData = [...currentData];
+
+                // FILTRAGE CÔTÉ CLIENT - Filtre par surface habitable
+                const surfaceRefEl = document.getElementById('surfaceReference');
+                const surfaceTolEl = document.getElementById('surfaceTolerance');
+                
+                if (surfaceRefEl && surfaceTolEl) {
+                    const surfaceRef = parseFloat(surfaceRefEl.value);
+                    const tolerance = parseFloat(surfaceTolEl.value) || 10;
+
+                    if (surfaceRef && surfaceRef > 0) {
+                        const minSurface = surfaceRef * (1 - tolerance / 100);
+                        const maxSurface = surfaceRef * (1 + tolerance / 100);
+
+                        filteredData = filteredData.filter(dpe => {
+                            const surface = parseFloat(dpe.surface_habitable_logement);
+                            return surface >= minSurface && surface <= maxSurface;
+                        });
+                        
+                        console.log('Après filtre surface:', filteredData.length, 'résultats');
+                    }
+                }
+
+                displayResults();
+                switchScreen('results');
+                
+                // Save search to stats
+                incrementStat('searches');
+
+            } catch (error) {
+                showToast('Erreur lors de la recherche: ' + error.message);
+                console.error('Erreur détaillée:', error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
 
                 showToast('Enrichissement des données...');
                 currentData = await enrichWithCommuneNames(currentData);
