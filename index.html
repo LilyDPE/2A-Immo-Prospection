@@ -1065,6 +1065,10 @@
                                 <input type="checkbox" id="classeG">
                                 <label for="classeG">G</label>
                             </div>
+                            <div class="checkbox-item" onclick="toggleCheckboxClasse('classeNA')">
+                                <input type="checkbox" id="classeNA">
+                                <label for="classeNA">N/A</label>
+                            </div>
                         </div>
                     </div>
 
@@ -1098,6 +1102,23 @@
         <div class="screen" id="resultsScreen">
             <div class="container">
                 <div class="card" id="resultsHeader"></div>
+                
+                <!-- Menu de tri -->
+                <div class="card" style="padding: 15px; margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--primary);">
+                        🔄 Trier par :
+                    </label>
+                    <select id="sortSelect" onchange="applySorting()" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                        <option value="date_desc">📅 Date (plus récent)</option>
+                        <option value="date_asc">📅 Date (plus ancien)</option>
+                        <option value="address_asc">📍 Adresse (CP, Ville, Rue)</option>
+                        <option value="address_desc">📍 Adresse (inverse)</option>
+                        <option value="classe_asc">⚡ Classe énergétique (A→G)</option>
+                        <option value="classe_desc">⚡ Classe énergétique (G→A)</option>
+                        <option value="surface_asc">📏 Surface (croissante)</option>
+                        <option value="surface_desc">📏 Surface (décroissante)</option>
+                    </select>
+                </div>
                 
                 <!-- Légende des statuts -->
                 <div class="legend">
@@ -1592,7 +1613,7 @@
 
             // Si on coche "Toutes les classes", on décoche toutes les autres
             if (id === 'classeTout' && checkbox.checked) {
-                ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(classe => {
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'NA'].forEach(classe => {
                     const cb = document.getElementById('classe' + classe);
                     cb.checked = false;
                     cb.parentElement.classList.remove('checked');
@@ -1606,7 +1627,7 @@
             }
             // Si on décoche toutes les classes individuelles, on recoche "Toutes"
             else if (id !== 'classeTout' && !checkbox.checked) {
-                const anyChecked = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].some(classe => 
+                const anyChecked = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'NA'].some(classe => 
                     document.getElementById('classe' + classe).checked
                 );
                 if (!anyChecked) {
@@ -1962,7 +1983,7 @@
                 let selectedClasses = [];
                 
                 if (!toutesLesClasses) {
-                    ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(classe => {
+                    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'NA'].forEach(classe => {
                         const el = document.getElementById(`classe${classe}`);
                         if (el && el.checked) {
                             selectedClasses.push(classe);
@@ -2031,9 +2052,15 @@
 
                 // FILTRAGE CÔTÉ CLIENT - Filtre par classe énergétique
                 if (!toutesLesClasses && selectedClasses.length > 0) {
-                    currentData = currentData.filter(dpe => 
-                        selectedClasses.includes(dpe.classe_consommation_energie)
-                    );
+                    currentData = currentData.filter(dpe => {
+                        const classe = dpe.classe_consommation_energie;
+                        // Si N/A est sélectionné et que la classe est vide/null, on inclut
+                        if (selectedClasses.includes('NA') && (!classe || classe === '' || classe === 'N' || classe === 'N/A')) {
+                            return true;
+                        }
+                        // Sinon on vérifie si la classe fait partie des classes sélectionnées
+                        return selectedClasses.includes(classe);
+                    });
                     console.log('Après filtre classe:', currentData.length, 'résultats');
                 }
 
@@ -2063,48 +2090,6 @@
                         });
                         
                         console.log('Après filtre surface:', filteredData.length, 'résultats');
-                    }
-                }
-
-                displayResults();
-                switchScreen('results');
-                
-                // Save search to stats
-                incrementStat('searches');
-
-            } catch (error) {
-                showToast('Erreur lors de la recherche: ' + error.message);
-                console.error('Erreur détaillée:', error);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-
-                showToast('Enrichissement des données...');
-                currentData = await enrichWithCommuneNames(currentData);
-
-                currentData.sort((a, b) => {
-                    const dateA = new Date(a.date_etablissement_dpe || '1900-01-01');
-                    const dateB = new Date(b.date_etablissement_dpe || '1900-01-01');
-                    return dateB - dateA;
-                });
-
-                filteredData = [...currentData];
-
-                // NOUVEAU: Appliquer le filtre de surface habitable
-                const surfaceRefEl = document.getElementById('surfaceReference');
-                const surfaceTolEl = document.getElementById('surfaceTolerance');
-                
-                if (surfaceRefEl && surfaceTolEl) {
-                    const surfaceRef = parseFloat(surfaceRefEl.value);
-                    const tolerance = parseFloat(surfaceTolEl.value) || 10;
-
-                    if (surfaceRef && surfaceRef > 0) {
-                        const minSurface = surfaceRef * (1 - tolerance / 100);
-                        const maxSurface = surfaceRef * (1 + tolerance / 100);
-
-                        filteredData = filteredData.filter(dpe => {
-                            const surface = parseFloat(dpe.surface_habitable_logement);
-                            return surface >= minSurface && surface <= maxSurface;
-                        });
                     }
                 }
 
@@ -2241,6 +2226,104 @@
             }
 
             filteredData = filtered;
+            applySorting(); // Appliquer le tri après le filtrage
+        }
+
+        function applySorting() {
+            const sortSelect = document.getElementById('sortSelect');
+            if (!sortSelect) {
+                displayFilteredResults();
+                updateMapMarkers();
+                return;
+            }
+
+            const sortValue = sortSelect.value;
+            
+            // Fonction helper pour comparer les adresses
+            const getAddressSort = (dpe) => {
+                const cp = dpe.code_postal_brut || '';
+                const ville = (dpe.commune || '').toLowerCase();
+                const rue = (dpe.nom_rue || '').toLowerCase();
+                return `${cp}_${ville}_${rue}`;
+            };
+
+            // Fonction helper pour l'ordre des classes énergétiques
+            const getClasseOrder = (classe) => {
+                const order = { 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'N/A': 8, '': 9 };
+                return order[classe] || 9;
+            };
+
+            // Appliquer le tri
+            switch(sortValue) {
+                case 'date_desc':
+                    filteredData.sort((a, b) => {
+                        const dateA = new Date(a.date_etablissement_dpe || '1900-01-01');
+                        const dateB = new Date(b.date_etablissement_dpe || '1900-01-01');
+                        return dateB - dateA;
+                    });
+                    break;
+                
+                case 'date_asc':
+                    filteredData.sort((a, b) => {
+                        const dateA = new Date(a.date_etablissement_dpe || '1900-01-01');
+                        const dateB = new Date(b.date_etablissement_dpe || '1900-01-01');
+                        return dateA - dateB;
+                    });
+                    break;
+
+                case 'address_asc':
+                    filteredData.sort((a, b) => {
+                        return getAddressSort(a).localeCompare(getAddressSort(b));
+                    });
+                    break;
+
+                case 'address_desc':
+                    filteredData.sort((a, b) => {
+                        return getAddressSort(b).localeCompare(getAddressSort(a));
+                    });
+                    break;
+
+                case 'classe_asc':
+                    filteredData.sort((a, b) => {
+                        const classeA = a.classe_consommation_energie || '';
+                        const classeB = b.classe_consommation_energie || '';
+                        return getClasseOrder(classeA) - getClasseOrder(classeB);
+                    });
+                    break;
+
+                case 'classe_desc':
+                    filteredData.sort((a, b) => {
+                        const classeA = a.classe_consommation_energie || '';
+                        const classeB = b.classe_consommation_energie || '';
+                        return getClasseOrder(classeB) - getClasseOrder(classeA);
+                    });
+                    break;
+
+                case 'surface_asc':
+                    filteredData.sort((a, b) => {
+                        const surfaceA = parseFloat(a.surface_habitable_logement) || 0;
+                        const surfaceB = parseFloat(b.surface_habitable_logement) || 0;
+                        return surfaceA - surfaceB;
+                    });
+                    break;
+
+                case 'surface_desc':
+                    filteredData.sort((a, b) => {
+                        const surfaceA = parseFloat(a.surface_habitable_logement) || 0;
+                        const surfaceB = parseFloat(b.surface_habitable_logement) || 0;
+                        return surfaceB - surfaceA;
+                    });
+                    break;
+
+                default:
+                    // Par défaut : date décroissante
+                    filteredData.sort((a, b) => {
+                        const dateA = new Date(a.date_etablissement_dpe || '1900-01-01');
+                        const dateB = new Date(b.date_etablissement_dpe || '1900-01-01');
+                        return dateB - dateA;
+                    });
+            }
+
             displayFilteredResults();
             updateMapMarkers();
         }
