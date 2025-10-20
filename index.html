@@ -2101,6 +2101,17 @@
                     }
                 }
 
+                // Sauvegarder les filtres actifs pour les utiliser dans applyFilters()
+                activeClassFilters = !toutesLesClasses ? selectedClasses : [];
+                
+                if (surfaceRefEl && surfaceTolEl) {
+                    const surfaceRef = parseFloat(surfaceRefEl.value);
+                    const tolerance = parseFloat(surfaceTolEl.value) || 10;
+                    activeSurfaceFilter = (surfaceRef && surfaceRef > 0) ? { surfaceRef, tolerance } : null;
+                } else {
+                    activeSurfaceFilter = null;
+                }
+
                 displayResults();
                 switchScreen('results');
                 
@@ -2205,6 +2216,8 @@
         }
 
         let activeCityFilter = '';
+        let activeClassFilters = [];
+        let activeSurfaceFilter = null;
 
         function filterByCity(city) {
             activeCityFilter = city;
@@ -2221,10 +2234,37 @@
         function applyFilters() {
             let filtered = [...currentData];
 
+            // Filtre par ville
             if (activeCityFilter) {
                 filtered = filtered.filter(dpe => (dpe.commune || 'Inconnu') === activeCityFilter);
             }
 
+            // Filtre par classe énergétique
+            if (activeClassFilters.length > 0) {
+                filtered = filtered.filter(dpe => {
+                    const classe = dpe.classe_consommation_energie;
+                    // Si N/A est sélectionné et que la classe est vide/null, on inclut
+                    if (activeClassFilters.includes('NA') && (!classe || classe === '' || classe === 'N' || classe === 'N/A')) {
+                        return true;
+                    }
+                    // Sinon on vérifie si la classe fait partie des classes sélectionnées
+                    return activeClassFilters.includes(classe);
+                });
+            }
+
+            // Filtre par surface habitable
+            if (activeSurfaceFilter) {
+                const { surfaceRef, tolerance } = activeSurfaceFilter;
+                const minSurface = surfaceRef * (1 - tolerance / 100);
+                const maxSurface = surfaceRef * (1 + tolerance / 100);
+                
+                filtered = filtered.filter(dpe => {
+                    const surface = parseFloat(dpe.surface_habitable_logement);
+                    return surface >= minSurface && surface <= maxSurface;
+                });
+            }
+
+            // Masquer les biens vus
             const hideSeen = document.getElementById('hideSeenToggle')?.checked;
             if (hideSeen) {
                 filtered = filtered.filter(dpe => {
