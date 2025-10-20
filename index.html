@@ -1958,7 +1958,7 @@
                 
                 // Récupérer les classes cochées (nouveau système de checkboxes)
                 const classeToutEl = document.getElementById('classeTout');
-                const toutesLesClasses = classeToutEl ? classeToutEl.checked : true;
+                let toutesLesClasses = classeToutEl ? classeToutEl.checked : true;
                 let selectedClasses = [];
                 
                 if (!toutesLesClasses) {
@@ -1968,7 +1968,19 @@
                             selectedClasses.push(classe);
                         }
                     });
+                    
+                    // Si aucune classe n'est cochée, on recoche automatiquement "Toutes les classes"
+                    if (selectedClasses.length === 0) {
+                        if (classeToutEl) {
+                            classeToutEl.checked = true;
+                            classeToutEl.parentElement.classList.add('checked');
+                        }
+                        toutesLesClasses = true;
+                    }
                 }
+                
+                console.log('Toutes les classes:', toutesLesClasses);
+                console.log('Classes sélectionnées:', selectedClasses);
 
                 if (!codePostalInput) {
                     showToast('Veuillez entrer un code postal');
@@ -1999,14 +2011,24 @@
                     const classFilter = selectedClasses.map(c => `classe_consommation_energie:${c}`).join(' OR ');
                     qs += ` AND (${classFilter})`;
                 }
+                
+                console.log('Query string:', qs);
 
                 const params = new URLSearchParams({
                     size: 1000,
                     qs: qs
                 });
+                
+                console.log('URL complète:', `${url}?${params}`);
 
                 const response = await fetch(`${url}?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
+                console.log('Données reçues:', data);
                 currentData = data.results || [];
 
                 showToast('Enrichissement des données...');
