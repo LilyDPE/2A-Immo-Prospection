@@ -778,6 +778,14 @@
             padding: 15px;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .user-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+            border-left: 3px solid var(--accent);
         }
 
         .user-status {
@@ -1316,7 +1324,7 @@
             <div class="container">
                 <div class="card">
                     <h3 style="margin-bottom: 15px; color: var(--primary);">⚙️ Dashboard Admin</h3>
-                    
+
                     <div class="admin-grid">
                         <div class="stat-card">
                             <div class="stat-icon">👥</div>
@@ -1333,17 +1341,125 @@
                             <div class="stat-value" id="adminTotalVisits">0</div>
                             <div class="stat-label">Visites totales</div>
                         </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🏠</div>
+                            <div class="stat-value" id="adminTotalProperties">0</div>
+                            <div class="stat-label">Biens prospectés</div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="card">
                     <h4 style="margin-bottom: 15px;">👥 Utilisateurs</h4>
+                    <div style="font-size: 0.85em; color: #666; margin-bottom: 10px;">Cliquez sur un utilisateur pour voir ses biens</div>
                     <div id="usersList"></div>
+                </div>
+
+                <div class="card">
+                    <h4 style="margin-bottom: 15px;">🏠 Tous les biens prospectés</h4>
+                    <button class="btn btn-primary" onclick="showAllProperties()" style="width: 100%; margin-bottom: 15px;">
+                        📋 Voir tous les biens
+                    </button>
                 </div>
 
                 <div class="card">
                     <h4 style="margin-bottom: 15px;">📝 Activité récente</h4>
                     <div class="activity-feed" id="activityFeed"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Detail Screen -->
+        <div class="screen" id="userDetailScreen">
+            <div class="container">
+                <button class="btn btn-secondary" onclick="switchScreen('admin')" style="margin-bottom: 15px;">
+                    ← Retour au dashboard
+                </button>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="color: var(--primary); margin: 0;" id="userDetailName"></h3>
+                            <div style="color: #666; font-size: 0.9em;" id="userDetailEmail"></div>
+                        </div>
+                        <span class="user-status active" id="userDetailStatus"></span>
+                    </div>
+
+                    <div class="admin-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📈</div>
+                            <div class="stat-value" id="userDetailSearches">0</div>
+                            <div class="stat-label">Recherches</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">👁️</div>
+                            <div class="stat-value" id="userDetailSeen">0</div>
+                            <div class="stat-label">Biens consultés</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⭐</div>
+                            <div class="stat-value" id="userDetailInterested">0</div>
+                            <div class="stat-label">Intéressés</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-value" id="userDetailVisits">0</div>
+                            <div class="stat-label">Visités</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4 style="margin-bottom: 15px;">🏠 Biens consultés</h4>
+                    <div style="margin-bottom: 15px;">
+                        <button class="period-tab active" onclick="filterUserProperties('tous')" id="filterTous">
+                            Tous (<span id="countTous">0</span>)
+                        </button>
+                        <button class="period-tab" onclick="filterUserProperties('interesse')" id="filterInteresse">
+                            Intéressés (<span id="countInteresse">0</span>)
+                        </button>
+                        <button class="period-tab" onclick="filterUserProperties('visite')" id="filterVisite">
+                            Visités (<span id="countVisite">0</span>)
+                        </button>
+                    </div>
+                    <div id="userPropertiesList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Properties Screen -->
+        <div class="screen" id="allPropertiesScreen">
+            <div class="container">
+                <button class="btn btn-secondary" onclick="switchScreen('admin')" style="margin-bottom: 15px;">
+                    ← Retour au dashboard
+                </button>
+
+                <div class="card">
+                    <h3 style="color: var(--primary); margin-bottom: 15px;">🏠 Tous les biens prospectés</h3>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-weight: 600; margin-bottom: 5px; display: block;">Filtrer par utilisateur</label>
+                        <select id="filterByUser" onchange="filterAllProperties()" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                            <option value="">Tous les utilisateurs</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <button class="period-tab active" onclick="filterAllPropertiesByStatus('tous')" id="filterAllTous">
+                            Tous (<span id="countAllTous">0</span>)
+                        </button>
+                        <button class="period-tab" onclick="filterAllPropertiesByStatus('interesse')" id="filterAllInteresse">
+                            Intéressés (<span id="countAllInteresse">0</span>)
+                        </button>
+                        <button class="period-tab" onclick="filterAllPropertiesByStatus('visite')" id="filterAllVisite">
+                            Visités (<span id="countAllVisite">0</span>)
+                        </button>
+                        <button class="period-tab" onclick="filterAllPropertiesByStatus('collegue')" id="filterAllCollegue">
+                            Partagés (<span id="countAllCollegue">0</span>)
+                        </button>
+                    </div>
+
+                    <div id="allPropertiesList"></div>
                 </div>
             </div>
         </div>
@@ -2136,8 +2252,9 @@
 
                 displayResults();
                 switchScreen('results');
-                
+
                 incrementStat('searches');
+                logActivity(`a effectué une recherche (${currentData.length} résultats)`);
 
             } catch (error) {
                 showToast('Erreur lors de la recherche: ' + error.message);
@@ -2495,21 +2612,28 @@
             const dpe = filteredData[index];
             const key = getDPEKey(dpe);
             const data = getPropertyData(key);
-            
+
+            const wasStatus = data.status;
             data.status = data.status === status ? null : status;
             data.seenBy = data.seenBy || [];
             if (!data.seenBy.includes(currentUser.uid)) {
                 data.seenBy.push(currentUser.uid);
             }
-            
+
             savePropertyData(key, data);
-            
+
             if (status === 'visite') {
                 incrementStat('visits');
+                if (wasStatus !== status) {
+                    logActivity(`a marqué un bien comme visité (${dpe.adresse_brut})`);
+                }
             } else if (status === 'interesse') {
                 incrementStat('interested');
+                if (wasStatus !== status) {
+                    logActivity(`a marqué un bien comme intéressé (${dpe.adresse_brut})`);
+                }
             }
-            
+
             applyFilters();
             updateMapMarkers();
             showToast('Statut mis à jour');
@@ -3329,47 +3453,356 @@
 
         function loadAdminData() {
             const stats = JSON.parse(localStorage.getItem('userStats') || '{}');
-            
+            const dpeData = JSON.parse(localStorage.getItem('dpeData') || '{}');
+
             let totalSearches = 0;
             let totalVisits = 0;
-            
+            let totalInterested = 0;
+
             Object.values(stats).forEach(userStat => {
                 totalSearches += userStat.searches || 0;
                 totalVisits += userStat.visits || 0;
+                totalInterested += userStat.interested || 0;
             });
-            
+
+            // Compter le nombre total de biens prospectés
+            const totalProperties = Object.keys(dpeData).length;
+
             document.getElementById('adminTotalSearches').textContent = totalSearches;
             document.getElementById('adminTotalVisits').textContent = totalVisits;
-            
+            document.getElementById('adminTotalProperties').textContent = totalProperties;
+
             const usersList = document.getElementById('usersList');
             usersList.innerHTML = Object.entries(testUsers).map(([email, user]) => {
-                const userStat = stats[email.replace('@', '_').replace('.', '_')] || {};
+                const uid = email.replace('@', '_').replace('.', '_');
+                const userStat = stats[uid] || {};
+
+                // Compter les biens consultés par cet utilisateur
+                const seenProperties = Object.values(dpeData).filter(prop =>
+                    prop.seenBy && prop.seenBy.includes(uid)
+                ).length;
+
                 return `
-                    <div class="user-card">
+                    <div class="user-card" onclick="showUserDetail('${email}')">
                         <div style="font-weight: 600;">${user.name} <span class="user-status ${Math.random() > 0.5 ? 'active' : 'inactive'}"></span></div>
                         <div style="font-size: 0.85em; color: #666;">${email}</div>
                         <div style="margin-top: 10px; font-size: 0.85em;">
+                            <div>👁️ ${seenProperties} biens consultés</div>
                             <div>📈 ${userStat.searches || 0} recherches</div>
                             <div>✅ ${userStat.visits || 0} visites</div>
                         </div>
                     </div>
                 `;
             }).join('');
-            
-            document.getElementById('activityFeed').innerHTML = `
-                <div class="activity-item">
-                    <div><strong>${currentUser.name}</strong> a effectué une recherche</div>
-                    <div class="activity-time">Il y a 5 minutes</div>
-                </div>
-                <div class="activity-item">
-                    <div><strong>Sonia</strong> a marqué un bien comme intéressé</div>
-                    <div class="activity-time">Il y a 1 heure</div>
-                </div>
-                <div class="activity-item">
-                    <div><strong>Maud</strong> a complété une mission</div>
-                    <div class="activity-time">Il y a 2 heures</div>
-                </div>
-            `;
+
+            // Charger l'activité récente depuis localStorage
+            loadActivityFeed();
+        }
+
+        function loadActivityFeed() {
+            const activityLog = JSON.parse(localStorage.getItem('activityLog') || '[]');
+            const activityFeed = document.getElementById('activityFeed');
+
+            if (activityLog.length === 0) {
+                activityFeed.innerHTML = `
+                    <div class="activity-item">
+                        <div style="color: #999;">Aucune activité récente</div>
+                    </div>
+                `;
+                return;
+            }
+
+            activityFeed.innerHTML = activityLog.slice(-10).reverse().map(activity => {
+                const timeAgo = getTimeAgo(activity.timestamp);
+                return `
+                    <div class="activity-item">
+                        <div><strong>${activity.userName}</strong> ${activity.action}</div>
+                        <div class="activity-time">${timeAgo}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getTimeAgo(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return 'À l\'instant';
+            if (minutes < 60) return `Il y a ${minutes} minute${minutes > 1 ? 's' : ''}`;
+            if (hours < 24) return `Il y a ${hours} heure${hours > 1 ? 's' : ''}`;
+            return `Il y a ${days} jour${days > 1 ? 's' : ''}`;
+        }
+
+        function logActivity(action) {
+            const activityLog = JSON.parse(localStorage.getItem('activityLog') || '[]');
+            activityLog.push({
+                userName: currentUser.name,
+                action: action,
+                timestamp: Date.now()
+            });
+
+            // Garder seulement les 50 dernières activités
+            if (activityLog.length > 50) {
+                activityLog.shift();
+            }
+
+            localStorage.setItem('activityLog', JSON.stringify(activityLog));
+        }
+
+        // ============================================
+        // USER DETAIL VIEW
+        // ============================================
+
+        let currentViewUserId = null;
+        let currentUserProperties = [];
+        let currentPropertyFilter = 'tous';
+
+        function showUserDetail(email) {
+            const user = testUsers[email];
+            const uid = email.replace('@', '_').replace('.', '_');
+            currentViewUserId = uid;
+
+            const stats = JSON.parse(localStorage.getItem('userStats') || '{}');
+            const userStat = stats[uid] || {};
+
+            const dpeData = JSON.parse(localStorage.getItem('dpeData') || '{}');
+
+            // Récupérer tous les biens consultés par cet utilisateur
+            currentUserProperties = Object.entries(dpeData)
+                .filter(([key, prop]) => prop.seenBy && prop.seenBy.includes(uid))
+                .map(([key, prop]) => ({
+                    key: key,
+                    ...prop,
+                    address: key.split('_')[0],
+                    date: key.split('_')[1]
+                }));
+
+            // Compter par statut
+            const interested = currentUserProperties.filter(p => p.status === 'interesse').length;
+            const visited = currentUserProperties.filter(p => p.status === 'visite').length;
+
+            // Afficher les infos utilisateur
+            document.getElementById('userDetailName').textContent = user.name;
+            document.getElementById('userDetailEmail').textContent = email;
+            document.getElementById('userDetailSearches').textContent = userStat.searches || 0;
+            document.getElementById('userDetailSeen').textContent = currentUserProperties.length;
+            document.getElementById('userDetailInterested').textContent = interested;
+            document.getElementById('userDetailVisits').textContent = visited;
+
+            // Mettre à jour les compteurs
+            document.getElementById('countTous').textContent = currentUserProperties.length;
+            document.getElementById('countInteresse').textContent = interested;
+            document.getElementById('countVisite').textContent = visited;
+
+            // Afficher les biens
+            currentPropertyFilter = 'tous';
+            displayUserProperties();
+
+            // Changer d'écran
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('userDetailScreen').classList.add('active');
+        }
+
+        function filterUserProperties(filter) {
+            currentPropertyFilter = filter;
+
+            // Mettre à jour les boutons actifs
+            document.querySelectorAll('#userDetailScreen .period-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`filter${filter.charAt(0).toUpperCase() + filter.slice(1)}`).classList.add('active');
+
+            displayUserProperties();
+        }
+
+        function displayUserProperties() {
+            let properties = currentUserProperties;
+
+            if (currentPropertyFilter === 'interesse') {
+                properties = properties.filter(p => p.status === 'interesse');
+            } else if (currentPropertyFilter === 'visite') {
+                properties = properties.filter(p => p.status === 'visite');
+            }
+
+            const list = document.getElementById('userPropertiesList');
+
+            if (properties.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🏠</div>
+                        <h3>Aucun bien</h3>
+                        <p>Aucun bien ${currentPropertyFilter === 'tous' ? 'consulté' : currentPropertyFilter}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = properties.map(prop => {
+                const statusColor = prop.status === 'interesse' ? 'var(--success)' :
+                                   prop.status === 'visite' ? 'var(--gray)' : '#fff';
+                const statusText = prop.status === 'interesse' ? 'Intéressé' :
+                                  prop.status === 'visite' ? 'Visité' : 'Consulté';
+
+                return `
+                    <div class="property-card" style="margin-bottom: 10px; padding: 12px; background: white; border-radius: 8px; border-left: 3px solid ${statusColor};">
+                        <div style="font-weight: 600; margin-bottom: 5px;">${prop.address}</div>
+                        <div style="font-size: 0.85em; color: #666;">
+                            <div>📅 ${prop.date}</div>
+                            ${prop.notes && prop.notes.length > 0 ? `<div style="margin-top: 5px;">💬 ${prop.notes[prop.notes.length - 1]}</div>` : ''}
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <span style="display: inline-block; padding: 4px 8px; background: ${statusColor}; color: ${prop.status ? 'white' : '#333'}; border-radius: 4px; font-size: 0.75em;">
+                                ${statusText}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ============================================
+        // ALL PROPERTIES VIEW
+        // ============================================
+
+        let allPropertiesData = [];
+        let currentAllPropertiesFilter = { user: '', status: 'tous' };
+
+        function showAllProperties() {
+            const dpeData = JSON.parse(localStorage.getItem('dpeData') || '{}');
+
+            allPropertiesData = Object.entries(dpeData).map(([key, prop]) => ({
+                key: key,
+                ...prop,
+                address: key.split('_')[0],
+                date: key.split('_')[1]
+            }));
+
+            // Remplir le select des utilisateurs
+            const select = document.getElementById('filterByUser');
+            select.innerHTML = '<option value="">Tous les utilisateurs</option>' +
+                Object.entries(testUsers).map(([email, user]) => {
+                    const uid = email.replace('@', '_').replace('.', '_');
+                    return `<option value="${uid}">${user.name}</option>`;
+                }).join('');
+
+            // Réinitialiser les filtres
+            currentAllPropertiesFilter = { user: '', status: 'tous' };
+
+            // Mettre à jour les compteurs
+            updateAllPropertiesCounts();
+
+            // Afficher les biens
+            displayAllProperties();
+
+            // Changer d'écran
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('allPropertiesScreen').classList.add('active');
+        }
+
+        function updateAllPropertiesCounts() {
+            let properties = allPropertiesData;
+
+            // Filtrer par utilisateur si nécessaire
+            if (currentAllPropertiesFilter.user) {
+                properties = properties.filter(p =>
+                    p.seenBy && p.seenBy.includes(currentAllPropertiesFilter.user)
+                );
+            }
+
+            const interested = properties.filter(p => p.status === 'interesse').length;
+            const visited = properties.filter(p => p.status === 'visite').length;
+            const shared = properties.filter(p => p.seenBy && p.seenBy.length > 1).length;
+
+            document.getElementById('countAllTous').textContent = properties.length;
+            document.getElementById('countAllInteresse').textContent = interested;
+            document.getElementById('countAllVisite').textContent = visited;
+            document.getElementById('countAllCollegue').textContent = shared;
+        }
+
+        function filterAllProperties() {
+            currentAllPropertiesFilter.user = document.getElementById('filterByUser').value;
+            updateAllPropertiesCounts();
+            displayAllProperties();
+        }
+
+        function filterAllPropertiesByStatus(status) {
+            currentAllPropertiesFilter.status = status;
+
+            // Mettre à jour les boutons actifs
+            document.querySelectorAll('#allPropertiesScreen .period-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`filterAll${status.charAt(0).toUpperCase() + status.slice(1)}`).classList.add('active');
+
+            displayAllProperties();
+        }
+
+        function displayAllProperties() {
+            let properties = allPropertiesData;
+
+            // Filtrer par utilisateur
+            if (currentAllPropertiesFilter.user) {
+                properties = properties.filter(p =>
+                    p.seenBy && p.seenBy.includes(currentAllPropertiesFilter.user)
+                );
+            }
+
+            // Filtrer par statut
+            if (currentAllPropertiesFilter.status === 'interesse') {
+                properties = properties.filter(p => p.status === 'interesse');
+            } else if (currentAllPropertiesFilter.status === 'visite') {
+                properties = properties.filter(p => p.status === 'visite');
+            } else if (currentAllPropertiesFilter.status === 'collegue') {
+                properties = properties.filter(p => p.seenBy && p.seenBy.length > 1);
+            }
+
+            const list = document.getElementById('allPropertiesList');
+
+            if (properties.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🏠</div>
+                        <h3>Aucun bien</h3>
+                        <p>Aucun bien trouvé avec ces filtres</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = properties.map(prop => {
+                const statusColor = prop.status === 'interesse' ? 'var(--success)' :
+                                   prop.status === 'visite' ? 'var(--gray)' : '#fff';
+                const statusText = prop.status === 'interesse' ? 'Intéressé' :
+                                  prop.status === 'visite' ? 'Visité' : 'Nouveau';
+
+                // Récupérer les noms des utilisateurs qui ont vu ce bien
+                const seenByNames = prop.seenBy ? prop.seenBy.map(uid => {
+                    const email = Object.keys(testUsers).find(e =>
+                        e.replace('@', '_').replace('.', '_') === uid
+                    );
+                    return email ? testUsers[email].name : uid;
+                }).join(', ') : 'Personne';
+
+                return `
+                    <div class="property-card" style="margin-bottom: 10px; padding: 12px; background: white; border-radius: 8px; border-left: 3px solid ${statusColor};">
+                        <div style="font-weight: 600; margin-bottom: 5px;">${prop.address}</div>
+                        <div style="font-size: 0.85em; color: #666;">
+                            <div>📅 ${prop.date}</div>
+                            <div style="margin-top: 5px;">👥 Vu par: ${seenByNames}</div>
+                            ${prop.notes && prop.notes.length > 0 ? `<div style="margin-top: 5px;">💬 ${prop.notes[prop.notes.length - 1]}</div>` : ''}
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <span style="display: inline-block; padding: 4px 8px; background: ${statusColor}; color: ${prop.status ? 'white' : '#333'}; border-radius: 4px; font-size: 0.75em;">
+                                ${statusText}
+                            </span>
+                            ${prop.seenBy && prop.seenBy.length > 1 ? '<span style="margin-left: 8px;">🔥</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // ============================================
