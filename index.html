@@ -927,6 +927,211 @@
             color: #0066cc;
             margin-top: 10px;
         }
+
+        /* Styles pour la sélection d'itinéraire */
+        .route-checkbox {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            z-index: 10;
+            accent-color: var(--accent);
+        }
+
+        .dpe-card {
+            position: relative;
+        }
+
+        .dpe-card.selected-for-route {
+            border: 3px solid var(--accent);
+            box-shadow: 0 4px 20px rgba(0, 169, 157, 0.3);
+        }
+
+        .route-floating-button {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--accent) 0%, #008c7f 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-size: 1em;
+            font-weight: 600;
+            box-shadow: 0 4px 20px rgba(0, 169, 157, 0.4);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            z-index: 99;
+            transition: all 0.3s;
+        }
+
+        .route-floating-button:active {
+            transform: scale(0.95);
+        }
+
+        .route-floating-button .badge {
+            background: white;
+            color: var(--accent);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            font-weight: 700;
+        }
+
+        /* Modal pour choix Google Maps / Waze */
+        .route-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .route-modal.active {
+            display: flex;
+        }
+
+        .route-modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+        }
+
+        .route-modal-header {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .route-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .route-preview-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .route-preview-number {
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85em;
+            flex-shrink: 0;
+        }
+
+        .route-app-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .route-app-btn {
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .route-app-btn:active {
+            transform: scale(0.95);
+        }
+
+        .route-app-btn.google {
+            border-color: #4285f4;
+            color: #4285f4;
+        }
+
+        .route-app-btn.google:hover {
+            background: #4285f4;
+            color: white;
+        }
+
+        .route-app-btn.waze {
+            border-color: #33ccff;
+            color: #33ccff;
+        }
+
+        .route-app-btn.waze:hover {
+            background: #33ccff;
+            color: white;
+        }
+
+        .route-app-btn .icon {
+            font-size: 2em;
+        }
+
+        .route-stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .route-stat {
+            text-align: center;
+        }
+
+        .route-stat-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .route-stat-label {
+            color: #666;
+            font-size: 0.85em;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -1380,6 +1585,49 @@
                 <span class="nav-label">Admin</span>
             </button>
         </div>
+
+        <!-- Bouton flottant pour l'itinéraire -->
+        <button class="route-floating-button" id="routeFloatingBtn" onclick="openRouteModal()">
+            <span>🗺️ Itinéraire</span>
+            <span class="badge" id="routeBadge">0</span>
+        </button>
+
+        <!-- Modal de sélection d'app de navigation -->
+        <div class="route-modal" id="routeModal">
+            <div class="route-modal-content">
+                <div class="route-modal-header">
+                    🗺️ Créer votre itinéraire
+                </div>
+
+                <div class="route-stats" id="routeStats">
+                    <div class="route-stat">
+                        <div class="route-stat-value" id="routeStopsCount">0</div>
+                        <div class="route-stat-label">Arrêts</div>
+                    </div>
+                    <div class="route-stat">
+                        <div class="route-stat-value" id="routeDistanceEst">--</div>
+                        <div class="route-stat-label">km estimés</div>
+                    </div>
+                </div>
+
+                <div class="route-preview" id="routePreview"></div>
+
+                <div class="route-app-buttons">
+                    <button class="route-app-btn google" onclick="openInGoogleMaps()">
+                        <div class="icon">🗺️</div>
+                        <div>Google Maps</div>
+                    </button>
+                    <button class="route-app-btn waze" onclick="openInWaze()">
+                        <div class="icon">🚗</div>
+                        <div>Waze</div>
+                    </button>
+                </div>
+
+                <button class="btn" onclick="closeRouteModal()" style="width: 100%; background: #e0e0e0; color: #333;">
+                    ✕ Annuler
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase -->
@@ -1669,6 +1917,11 @@
         }
 
         function switchScreen(screen) {
+            // Réinitialiser les sélections d'itinéraire quand on change d'écran
+            if (screen !== 'results' && typeof clearRouteSelection === 'function') {
+                clearRouteSelection();
+            }
+
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
@@ -1989,6 +2242,11 @@
         }
 
         async function searchDPE() {
+            // Réinitialiser les sélections d'itinéraire lors d'une nouvelle recherche
+            if (typeof clearRouteSelection === 'function') {
+                clearRouteSelection();
+            }
+
             try {
                 const codePostalInput = document.getElementById('codePostal').value.trim();
                 const annee = document.getElementById('annee').value;
@@ -2258,6 +2516,11 @@
         }
 
         function applyFilters() {
+            // Réinitialiser les sélections d'itinéraire lors du changement de filtres
+            if (typeof clearRouteSelection === 'function') {
+                clearRouteSelection();
+            }
+
             let filtered = [...currentData];
 
             if (activeCityFilter) {
@@ -2427,7 +2690,10 @@
                     : '';
                 
                 return `
-                    <div class="dpe-card status-${status}" id="dpe-${index}">
+                    <div class="dpe-card status-${status}" id="dpe-${index}" data-index="${index}">
+                        <input type="checkbox" class="route-checkbox" id="route-checkbox-${index}"
+                               onchange="toggleRouteSelection(${index})"
+                               title="Sélectionner pour l'itinéraire">
                         <div class="dpe-header">
                             <div>
                                 <div class="dpe-address">📍 ${dpe.adresse_brut || 'Adresse non renseignée'}</div>
@@ -3133,6 +3399,224 @@
 
         function exportMissionPDF() {
             showToast('Export PDF (fonctionnalité à implémenter)');
+        }
+
+        // ============================================
+        // ROUTE SELECTION & ITINERARY FROM RESULTS
+        // ============================================
+
+        let selectedRouteProperties = new Set();
+        const MAX_ROUTE_PROPERTIES = 10;
+
+        function toggleRouteSelection(index) {
+            const checkbox = document.getElementById(`route-checkbox-${index}`);
+            const card = document.getElementById(`dpe-${index}`);
+
+            if (checkbox.checked) {
+                // Vérifier la limite de 10
+                if (selectedRouteProperties.size >= MAX_ROUTE_PROPERTIES) {
+                    checkbox.checked = false;
+                    showToast(`Maximum ${MAX_ROUTE_PROPERTIES} biens pour l'itinéraire`);
+                    return;
+                }
+                selectedRouteProperties.add(index);
+                card.classList.add('selected-for-route');
+            } else {
+                selectedRouteProperties.delete(index);
+                card.classList.remove('selected-for-route');
+            }
+
+            updateRouteButton();
+        }
+
+        function updateRouteButton() {
+            const btn = document.getElementById('routeFloatingBtn');
+            const badge = document.getElementById('routeBadge');
+
+            if (selectedRouteProperties.size > 0) {
+                btn.style.display = 'flex';
+                badge.textContent = selectedRouteProperties.size;
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        function openRouteModal() {
+            if (selectedRouteProperties.size === 0) {
+                showToast('Sélectionnez au moins un bien');
+                return;
+            }
+
+            const modal = document.getElementById('routeModal');
+            const preview = document.getElementById('routePreview');
+            const stopsCount = document.getElementById('routeStopsCount');
+            const distanceEst = document.getElementById('routeDistanceEst');
+
+            // Récupérer les propriétés sélectionnées
+            const selectedProps = Array.from(selectedRouteProperties).map(index => ({
+                index: index,
+                dpe: filteredData[index]
+            }));
+
+            // Optimiser l'ordre géographiquement
+            const optimizedRoute = optimizeRouteOrder(selectedProps);
+
+            // Calculer la distance estimée
+            let totalDistance = 0;
+            for (let i = 0; i < optimizedRoute.length - 1; i++) {
+                totalDistance += calculateDistanceBetweenProperties(
+                    optimizedRoute[i].dpe,
+                    optimizedRoute[i + 1].dpe
+                );
+            }
+
+            // Afficher les statistiques
+            stopsCount.textContent = optimizedRoute.length;
+            distanceEst.textContent = totalDistance > 0 ? totalDistance.toFixed(1) : '--';
+
+            // Afficher l'aperçu de l'itinéraire optimisé
+            preview.innerHTML = optimizedRoute.map((item, idx) => {
+                const dpe = item.dpe;
+                const ville = dpe.commune || `CP ${dpe.code_postal_brut}`;
+                return `
+                    <div class="route-preview-item">
+                        <div class="route-preview-number">${idx + 1}</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${dpe.adresse_brut || 'Adresse inconnue'}</div>
+                            <div style="font-size: 0.85em; color: #666;">${ville} - Classe ${dpe.classe_consommation_energie || 'N/A'}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Stocker l'itinéraire optimisé globalement pour l'utiliser dans les fonctions d'ouverture
+            window.currentOptimizedRoute = optimizedRoute;
+
+            modal.classList.add('active');
+        }
+
+        function closeRouteModal() {
+            const modal = document.getElementById('routeModal');
+            modal.classList.remove('active');
+        }
+
+        function optimizeRouteOrder(properties) {
+            if (properties.length <= 1) return properties;
+
+            // Algorithme du plus proche voisin (Nearest Neighbor)
+            const optimized = [];
+            const remaining = [...properties];
+
+            // Commencer par le premier élément
+            let current = remaining[0];
+            optimized.push(current);
+            remaining.splice(0, 1);
+
+            // Tant qu'il reste des propriétés
+            while (remaining.length > 0) {
+                let minDistance = Infinity;
+                let closestIndex = 0;
+
+                // Trouver la propriété la plus proche
+                for (let i = 0; i < remaining.length; i++) {
+                    const distance = calculateDistanceBetweenProperties(
+                        current.dpe,
+                        remaining[i].dpe
+                    );
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestIndex = i;
+                    }
+                }
+
+                // Ajouter la plus proche et la retirer des restantes
+                current = remaining[closestIndex];
+                optimized.push(current);
+                remaining.splice(closestIndex, 1);
+            }
+
+            return optimized;
+        }
+
+        function openInGoogleMaps() {
+            if (!window.currentOptimizedRoute || window.currentOptimizedRoute.length === 0) {
+                showToast('Aucun itinéraire à ouvrir');
+                return;
+            }
+
+            const route = window.currentOptimizedRoute;
+            const addresses = route.map(item => {
+                const dpe = item.dpe;
+                const ville = dpe.commune || dpe.code_postal_brut;
+                return `${dpe.adresse_brut}, ${ville}`;
+            });
+
+            if (addresses.length === 1) {
+                // Un seul point : ouvrir juste la recherche
+                const query = encodeURIComponent(addresses[0]);
+                window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+            } else {
+                // Multiple points : créer un itinéraire
+                const origin = encodeURIComponent(addresses[0]);
+                const destination = encodeURIComponent(addresses[addresses.length - 1]);
+                const waypoints = addresses.slice(1, -1).map(a => encodeURIComponent(a)).join('|');
+
+                let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
+                if (waypoints) url += `&waypoints=${waypoints}`;
+                url += '&travelmode=driving';
+
+                window.open(url, '_blank');
+            }
+
+            closeRouteModal();
+            showToast('Itinéraire ouvert dans Google Maps');
+        }
+
+        function openInWaze() {
+            if (!window.currentOptimizedRoute || window.currentOptimizedRoute.length === 0) {
+                showToast('Aucun itinéraire à ouvrir');
+                return;
+            }
+
+            const route = window.currentOptimizedRoute;
+
+            // Waze ne supporte pas les waypoints multiples facilement
+            // On va ouvrir le premier point pour commencer
+            // L'utilisateur devra naviguer point par point
+
+            if (route.length === 1) {
+                const dpe = route[0].dpe;
+                const ville = dpe.commune || dpe.code_postal_brut;
+                const address = `${dpe.adresse_brut}, ${ville}`;
+                const query = encodeURIComponent(address);
+                window.open(`https://waze.com/ul?q=${query}&navigate=yes`, '_blank');
+                showToast('Point ouvert dans Waze');
+            } else {
+                // Pour plusieurs points, on propose d'ouvrir tous les liens
+                if (confirm(`Waze ne supporte pas les itinéraires multi-points.\n\nVoulez-vous ouvrir ${route.length} destinations dans Waze ?\n(Vous devrez naviguer point par point)`)) {
+                    route.forEach((item, idx) => {
+                        const dpe = item.dpe;
+                        const ville = dpe.commune || dpe.code_postal_brut;
+                        const address = `${dpe.adresse_brut}, ${ville}`;
+                        const query = encodeURIComponent(address);
+
+                        setTimeout(() => {
+                            window.open(`https://waze.com/ul?q=${query}&navigate=yes`, '_blank');
+                        }, idx * 500);
+                    });
+                    showToast(`${route.length} destinations ouvertes dans Waze`);
+                }
+            }
+
+            closeRouteModal();
+        }
+
+        // Réinitialiser les sélections quand on change d'écran ou de résultats
+        function clearRouteSelection() {
+            selectedRouteProperties.clear();
+            document.querySelectorAll('.route-checkbox').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.dpe-card').forEach(card => card.classList.remove('selected-for-route'));
+            updateRouteButton();
         }
 
         // ============================================
