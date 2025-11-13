@@ -2299,7 +2299,8 @@
 
                 const params = new URLSearchParams({
                     size: 1000,
-                    qs: qs
+                    qs: qs,
+                    sort: 'date_etablissement_dpe:-1'  // Trier par date décroissante (plus récents d'abord)
                 });
 
                 const response = await fetch(`${url}?${params}`);
