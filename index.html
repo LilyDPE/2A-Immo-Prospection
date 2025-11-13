@@ -2348,9 +2348,9 @@
                 // NOUVEAU: SI RECHERCHE GÉOLOCALISÉE, FILTRER PAR DISTANCE GPS PRÉCISE
                 if (isGeoSearch && userLocation) {
                     showToast('🗺️ Géocodage et calcul des distances...', 3000);
-                    
+
                     const geocodedData = [];
-                    const maxGeocode = Math.min(currentData.length, 150);
+                    const maxGeocode = Math.min(currentData.length, 500);  // Augmenté de 150 à 500 pour couvrir plus de DPE
                     
                     for (let i = 0; i < maxGeocode; i++) {
                         const dpe = currentData[i];
