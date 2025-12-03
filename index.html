@@ -2015,6 +2015,9 @@
                     }
                 }
 
+                // Sauvegarder les classes sélectionnées pour les filtres post-recherche
+                activeClassFilters = toutesLesClasses ? [] : [...selectedClasses];
+
                 if (!codePostalInput) {
                     showToast('Veuillez entrer un code postal');
                     return;
