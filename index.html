@@ -1997,26 +1997,34 @@
                 const classeToutEl = document.getElementById('classeTout');
                 let toutesLesClasses = classeToutEl ? classeToutEl.checked : true;
                 let selectedClasses = [];
-                
-                if (!toutesLesClasses) {
-                    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'NA'].forEach(classe => {
-                        const el = document.getElementById(`classe${classe}`);
-                        if (el && el.checked) {
-                            selectedClasses.push(classe);
-                        }
-                    });
-                    
-                    if (selectedClasses.length === 0) {
-                        if (classeToutEl) {
-                            classeToutEl.checked = true;
-                            classeToutEl.parentElement.classList.add('checked');
-                        }
-                        toutesLesClasses = true;
+
+                // DEBUG: Afficher l'état des checkboxes
+                console.log('=== DEBUG FILTRE DPE ===');
+                console.log('classeTout checked:', classeToutEl?.checked);
+                console.log('toutesLesClasses:', toutesLesClasses);
+
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'NA'].forEach(classe => {
+                    const el = document.getElementById(`classe${classe}`);
+                    console.log(`classe${classe} checked:`, el?.checked);
+                    if (el && el.checked) {
+                        selectedClasses.push(classe);
                     }
+                });
+
+                console.log('selectedClasses:', selectedClasses);
+
+                if (selectedClasses.length === 0 && !toutesLesClasses) {
+                    if (classeToutEl) {
+                        classeToutEl.checked = true;
+                        classeToutEl.parentElement.classList.add('checked');
+                    }
+                    toutesLesClasses = true;
                 }
 
                 // Sauvegarder les classes sélectionnées pour les filtres post-recherche
                 activeClassFilters = toutesLesClasses ? [] : [...selectedClasses];
+                console.log('activeClassFilters:', activeClassFilters);
+                console.log('=== FIN DEBUG ===');
 
                 if (!codePostalInput) {
                     showToast('Veuillez entrer un code postal');
@@ -2060,15 +2068,32 @@
                 currentData = await enrichWithCommuneNames(currentData);
 
                 // FILTRE PAR CLASSE ÉNERGÉTIQUE
+                console.log('=== DEBUG FILTRE CLASSE ===');
+                console.log('toutesLesClasses:', toutesLesClasses);
+                console.log('selectedClasses:', selectedClasses);
+                console.log('Données avant filtre:', currentData.length);
+
+                // Log les classes présentes dans les données
+                const classesPresentes = [...new Set(currentData.map(d => d.classe_consommation_energie))];
+                console.log('Classes présentes dans les données:', classesPresentes);
+
                 if (!toutesLesClasses && selectedClasses.length > 0) {
+                    console.log('Application du filtre de classe...');
                     currentData = currentData.filter(dpe => {
                         const classe = dpe.classe_consommation_energie;
+                        const classeNormalisee = classe ? classe.toUpperCase().trim() : '';
+
                         if (selectedClasses.includes('NA') && (!classe || classe === '' || classe === 'N' || classe === 'N/A')) {
                             return true;
                         }
-                        return selectedClasses.includes(classe);
+                        // Comparer en majuscules
+                        return selectedClasses.some(sc => sc.toUpperCase() === classeNormalisee);
                     });
+                    console.log('Données après filtre:', currentData.length);
+                } else {
+                    console.log('Pas de filtre de classe appliqué');
                 }
+                console.log('=== FIN DEBUG FILTRE ===');
 
                 // FILTRE PAR SURFACE HABITABLE
                 const surfaceRefEl = document.getElementById('surfaceReference');
