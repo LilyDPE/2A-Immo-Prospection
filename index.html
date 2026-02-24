@@ -1234,12 +1234,32 @@
                         <button class="btn btn-success" style="margin-top: 15px;" onclick="showMissionOnMap()">
                             🗺️ Voir l'itinéraire sur la carte
                         </button>
-                        <button class="btn btn-primary" style="margin-top: 10px;" onclick="startMission()">
+                        <button class="btn btn-primary" style="margin-top: 10px;" onclick="startGuidedMode()">
+                            🧭 Mode Guidage GPS
+                        </button>
+                        <button class="btn" style="margin-top: 10px; background: #4285f4; color: white;" onclick="startMission()">
                             📍 Ouvrir dans Google Maps
                         </button>
                         <button class="btn btn-warning" style="margin-top: 10px;" onclick="exportMissionPDF()">
                             📄 Export PDF
                         </button>
+                    </div>
+
+                    <!-- Zone de guidage GPS -->
+                    <div id="guidedModePanel" style="display: none; margin-top: 20px;">
+                        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <h4 style="color: white; margin-bottom: 15px;">🧭 Mode Guidage Actif</h4>
+                            <div id="currentStepInfo" style="font-size: 1.1em; margin-bottom: 15px;"></div>
+                            <div id="nextStepInfo" style="padding: 15px; background: rgba(255,255,255,0.2); border-radius: 8px; margin-bottom: 15px;"></div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn" style="flex: 1; background: white; color: #667eea;" onclick="skipCurrentStep()">
+                                    ⏭️ Passer
+                                </button>
+                                <button class="btn" style="flex: 1; background: #e74c3c; color: white;" onclick="stopGuidedMode()">
+                                    ⏹️ Arrêter
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="missionSteps"></div>
@@ -3459,6 +3479,258 @@
 
         function exportMissionPDF() {
             showToast('Export PDF (fonctionnalité à implémenter)');
+        }
+
+        // ============================================
+        // MODE GUIDAGE GPS
+        // ============================================
+
+        let guidedModeActive = false;
+        let guidedModeWatchId = null;
+        let currentGPSPosition = null;
+        let remainingSteps = [];
+        let currentStepIndex = 0;
+
+        function startGuidedMode() {
+            if (currentMissionData.length === 0) {
+                showToast('Générez d\'abord une mission');
+                return;
+            }
+
+            if (!navigator.geolocation) {
+                showToast('Géolocalisation non supportée par votre navigateur');
+                return;
+            }
+
+            guidedModeActive = true;
+            document.getElementById('guidedModePanel').style.display = 'block';
+
+            showToast('🧭 Activation du guidage GPS...');
+
+            // Demander la position en continu
+            guidedModeWatchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    currentGPSPosition = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+
+                    if (remainingSteps.length === 0) {
+                        // Première fois : réorganiser la mission depuis la position actuelle
+                        reorganizeMissionFromCurrentPosition();
+                    } else {
+                        // Mettre à jour l'affichage
+                        updateGuidedModeDisplay();
+                    }
+                },
+                (error) => {
+                    showToast('❌ Erreur GPS : ' + error.message);
+                    stopGuidedMode();
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 5000,
+                    timeout: 10000
+                }
+            );
+        }
+
+        function reorganizeMissionFromCurrentPosition() {
+            if (!currentGPSPosition) return;
+
+            // Filtrer les étapes non complétées
+            const uncompletedSteps = currentMissionData.filter((dpe, index) => {
+                const stepEl = document.getElementById(`mission-${index}`);
+                return !stepEl || !stepEl.classList.contains('completed');
+            });
+
+            if (uncompletedSteps.length === 0) {
+                showToast('🎉 Mission terminée !');
+                stopGuidedMode();
+                return;
+            }
+
+            // Trouver le bien le plus proche
+            let closestIndex = 0;
+            let minDistance = Infinity;
+
+            uncompletedSteps.forEach((dpe, index) => {
+                const coords = getPropertyCoords(dpe);
+                if (!coords) return;
+
+                const distance = calculateDistance(
+                    currentGPSPosition.lat,
+                    currentGPSPosition.lng,
+                    coords.lat,
+                    coords.lng
+                );
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestIndex = index;
+                }
+            });
+
+            // Réorganiser : plus proche en premier, puis optimiser le reste
+            const firstStep = uncompletedSteps[closestIndex];
+            const remaining = uncompletedSteps.filter((_, i) => i !== closestIndex);
+
+            // Optimiser le reste par proximité
+            const optimized = [firstStep];
+            let currentPos = firstStep;
+
+            while (remaining.length > 0) {
+                let nextClosestIndex = 0;
+                let nextMinDistance = Infinity;
+
+                remaining.forEach((dpe, index) => {
+                    const distance = calculateDistanceBetweenProperties(currentPos, dpe);
+                    if (distance < nextMinDistance) {
+                        nextMinDistance = distance;
+                        nextClosestIndex = index;
+                    }
+                });
+
+                currentPos = remaining[nextClosestIndex];
+                optimized.push(currentPos);
+                remaining.splice(nextClosestIndex, 1);
+            }
+
+            remainingSteps = optimized;
+            currentStepIndex = 0;
+
+            showToast(`🎯 Itinéraire optimisé depuis votre position : ${remainingSteps.length} étapes`);
+            updateGuidedModeDisplay();
+        }
+
+        function updateGuidedModeDisplay() {
+            if (!currentGPSPosition || remainingSteps.length === 0) return;
+
+            const currentStep = remainingSteps[currentStepIndex];
+            const coords = getPropertyCoords(currentStep);
+
+            if (!coords) {
+                document.getElementById('currentStepInfo').innerHTML = '❌ Coordonnées indisponibles pour cette étape';
+                return;
+            }
+
+            const distance = calculateDistance(
+                currentGPSPosition.lat,
+                currentGPSPosition.lng,
+                coords.lat,
+                coords.lng
+            );
+
+            // Calculer la direction (bearing)
+            const bearing = calculateBearing(
+                currentGPSPosition.lat,
+                currentGPSPosition.lng,
+                coords.lat,
+                coords.lng
+            );
+
+            const direction = getDirectionFromBearing(bearing);
+
+            // Affichage distance
+            let distanceText;
+            if (distance < 0.1) {
+                distanceText = `${Math.round(distance * 1000)} mètres`;
+            } else {
+                distanceText = `${distance.toFixed(1)} km`;
+            }
+
+            document.getElementById('currentStepInfo').innerHTML = `
+                📍 Étape ${currentStepIndex + 1} sur ${remainingSteps.length}
+            `;
+
+            document.getElementById('nextStepInfo').innerHTML = `
+                <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 10px;">
+                    ${direction} ${distanceText}
+                </div>
+                <div style="font-size: 1.1em; margin-bottom: 5px;">
+                    <strong>${currentStep.adresse_brut}</strong>
+                </div>
+                <div style="font-size: 0.9em; opacity: 0.9;">
+                    ${currentStep.commune || `CP ${currentStep.code_postal_brut}`} - Classe ${currentStep.classe_consommation_energie || 'N/A'}
+                </div>
+                ${distance < 0.05 ? '<div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.3); border-radius: 5px; font-weight: bold;">🎯 Vous êtes arrivé !</div>' : ''}
+            `;
+
+            // Auto-complétion si très proche (< 50m)
+            if (distance < 0.05) {
+                setTimeout(() => {
+                    if (confirm('Vous êtes arrivé à destination ! Marquer cette étape comme terminée ?')) {
+                        skipCurrentStep();
+                    }
+                }, 2000);
+            }
+        }
+
+        function calculateBearing(lat1, lng1, lat2, lng2) {
+            const toRad = Math.PI / 180;
+            const phi1 = lat1 * toRad;
+            const phi2 = lat2 * toRad;
+            const deltaLambda = (lng2 - lng1) * toRad;
+
+            const y = Math.sin(deltaLambda) * Math.cos(phi2);
+            const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLambda);
+
+            const theta = Math.atan2(y, x);
+            return ((theta * 180 / Math.PI) + 360) % 360; // En degrés
+        }
+
+        function getDirectionFromBearing(bearing) {
+            const directions = [
+                { arrow: '⬆️', text: 'Tout droit' },
+                { arrow: '↗️', text: 'Tout droit à droite' },
+                { arrow: '➡️', text: 'À droite' },
+                { arrow: '↘️', text: 'Demi-tour à droite' },
+                { arrow: '⬇️', text: 'Demi-tour' },
+                { arrow: '↙️', text: 'Demi-tour à gauche' },
+                { arrow: '⬅️', text: 'À gauche' },
+                { arrow: '↖️', text: 'Tout droit à gauche' }
+            ];
+
+            const index = Math.round(bearing / 45) % 8;
+            return directions[index].arrow + ' ' + directions[index].text;
+        }
+
+        function skipCurrentStep() {
+            if (remainingSteps.length === 0) return;
+
+            // Marquer comme complété
+            const currentStep = remainingSteps[currentStepIndex];
+            const originalIndex = currentMissionData.indexOf(currentStep);
+            if (originalIndex !== -1) {
+                completeMissionStep(originalIndex);
+            }
+
+            currentStepIndex++;
+
+            if (currentStepIndex >= remainingSteps.length) {
+                showToast('🎉 Toutes les étapes sont terminées !');
+                stopGuidedMode();
+                return;
+            }
+
+            updateGuidedModeDisplay();
+        }
+
+        function stopGuidedMode() {
+            guidedModeActive = false;
+
+            if (guidedModeWatchId !== null) {
+                navigator.geolocation.clearWatch(guidedModeWatchId);
+                guidedModeWatchId = null;
+            }
+
+            document.getElementById('guidedModePanel').style.display = 'none';
+            currentGPSPosition = null;
+            remainingSteps = [];
+            currentStepIndex = 0;
+
+            showToast('Mode guidage arrêté');
         }
 
         // ============================================
