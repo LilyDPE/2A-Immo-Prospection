@@ -1231,8 +1231,11 @@
                                 <div style="font-size: 0.8em; color: #666;">heures</div>
                             </div>
                         </div>
-                        <button class="btn btn-success" style="margin-top: 15px;" onclick="startMission()">
-                            ▶️ Démarrer la mission
+                        <button class="btn btn-success" style="margin-top: 15px;" onclick="showMissionOnMap()">
+                            🗺️ Voir l'itinéraire sur la carte
+                        </button>
+                        <button class="btn btn-primary" style="margin-top: 10px;" onclick="startMission()">
+                            📍 Ouvrir dans Google Maps
                         </button>
                         <button class="btn btn-warning" style="margin-top: 10px;" onclick="exportMissionPDF()">
                             📄 Export PDF
@@ -3086,42 +3089,45 @@
         // MISSION
         // ============================================
 
+        let currentMissionData = [];
+        let missionRouteLayer = null;
+
         function generateMission() {
             if (filteredData.length === 0) {
                 showToast('Aucun DPE disponible');
                 return;
             }
-            
+
             showToast('Génération de la mission optimisée...');
-            
+
             const interested = filteredData.filter(dpe => {
                 const status = getPropertyStatus(dpe);
                 return status === 'interesse';
             });
-            
+
             const nouveaux = filteredData.filter(dpe => {
                 const status = getPropertyStatus(dpe);
                 return status === 'nouveau';
             });
-            
+
             let candidates = [...interested, ...nouveaux].slice(0, 30);
-            
+
             if (candidates.length === 0) {
                 showToast('Aucun bien à visiter');
                 return;
             }
-            
+
             let mission = [];
             let remaining = [...candidates];
-            
+
             let currentPos = remaining[0];
             mission.push(currentPos);
             remaining.splice(0, 1);
-            
+
             while (remaining.length > 0 && mission.length < 15) {
                 let minDistance = Infinity;
                 let closestIndex = 0;
-                
+
                 for (let i = 0; i < remaining.length; i++) {
                     const distance = calculateDistanceBetweenProperties(currentPos, remaining[i]);
                     if (distance < minDistance) {
@@ -3129,37 +3135,50 @@
                         closestIndex = i;
                     }
                 }
-                
+
                 currentPos = remaining[closestIndex];
                 mission.push(currentPos);
                 remaining.splice(closestIndex, 1);
             }
-            
+
+            currentMissionData = mission;
+
+            // Affichage initial avec distances à vol d'oiseau
             let totalDistance = 0;
             for (let i = 0; i < mission.length - 1; i++) {
                 totalDistance += calculateDistanceBetweenProperties(mission[i], mission[i + 1]);
             }
             const duration = (totalDistance / 30 + mission.length * 0.25).toFixed(1);
-            
+
             document.getElementById('missionTotal').textContent = mission.length;
             document.getElementById('missionDistance').textContent = totalDistance.toFixed(1);
             document.getElementById('missionDuration').textContent = duration;
-            
+
+            displayMissionSteps(mission);
+
+            document.getElementById('missionContent').style.display = 'block';
+            showToast(`Mission générée : ${mission.length} biens`);
+
+            // Lancer le calcul IGN en arrière-plan
+            calculateIGNRoute(mission);
+        }
+
+        function displayMissionSteps(mission) {
             const stepsDiv = document.getElementById('missionSteps');
             let cumulativeDistance = 0;
-            
+
             stepsDiv.innerHTML = mission.map((dpe, index) => {
                 if (index > 0) {
                     cumulativeDistance += calculateDistanceBetweenProperties(mission[index - 1], dpe);
                 }
-                
+
                 return `
                 <div class="mission-step" id="mission-${index}">
                     <span class="mission-number">${index + 1}</span>
                     <div style="flex: 1;">
                         <strong>${dpe.adresse_brut}</strong><br>
                         <small>${dpe.commune || `CP ${dpe.code_postal_brut}`} - Classe ${dpe.classe_consommation_energie || 'N/A'}</small><br>
-                        <small>📏 ${cumulativeDistance.toFixed(1)} km cumulés${index > 0 ? ` (+${calculateDistanceBetweenProperties(mission[index - 1], dpe).toFixed(1)} km)` : ''}</small>
+                        <small id="step-distance-${index}">📏 ${cumulativeDistance.toFixed(1)} km cumulés${index > 0 ? ` (+${calculateDistanceBetweenProperties(mission[index - 1], dpe).toFixed(1)} km)` : ''}</small>
                     </div>
                     <button class="btn btn-small btn-accent" onclick="completeMissionStep(${index})">
                         ✅ Terminé
@@ -3167,9 +3186,186 @@
                 </div>
             `;
             }).join('');
-            
-            document.getElementById('missionContent').style.display = 'block';
-            showToast(`Mission optimisée : ${mission.length} biens, ${totalDistance.toFixed(1)} km`);
+        }
+
+        function getPropertyCoords(dpe) {
+            if (dpe._geocoded_lat && dpe._geocoded_lng) {
+                return { lat: dpe._geocoded_lat, lng: dpe._geocoded_lng };
+            }
+            if (dpe._coords) {
+                return { lat: dpe._coords.lat, lng: dpe._coords.lng };
+            }
+            // Tenter le geocache
+            const cache = getGeoCache();
+            const key = `${dpe.adresse_brut}_${dpe.code_postal_brut}`;
+            if (cache[key]) {
+                return { lat: cache[key].lat, lng: cache[key].lng };
+            }
+            return null;
+        }
+
+        async function calculateIGNRoute(mission) {
+            // Récupérer les coordonnées de chaque bien
+            const coords = mission.map(dpe => getPropertyCoords(dpe)).filter(c => c !== null);
+
+            if (coords.length < 2) {
+                console.log('Pas assez de coordonnées pour calculer un itinéraire IGN');
+                return;
+            }
+
+            const start = `${coords[0].lng},${coords[0].lat}`;
+            const end = `${coords[coords.length - 1].lng},${coords[coords.length - 1].lat}`;
+
+            // Points intermédiaires
+            const intermediates = coords.slice(1, -1).map(c => `${c.lng},${c.lat}`).join('|');
+
+            try {
+                let url = `https://data.geopf.fr/navigation/itineraire?resource=bdtopo-osrm&start=${start}&end=${end}&profile=car&optimization=fastest&getSteps=true&getBbox=true&distanceUnit=kilometer&timeUnit=hour&crs=EPSG:4326`;
+
+                if (intermediates) {
+                    url += `&intermediates=${intermediates}`;
+                }
+
+                console.log('Calcul itinéraire IGN...');
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`IGN API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.distance !== undefined && data.duration !== undefined) {
+                    const distKm = typeof data.distance === 'number' ? data.distance : parseFloat(data.distance);
+                    const durH = typeof data.duration === 'number' ? data.duration : parseFloat(data.duration);
+
+                    // Ajouter le temps d'arrêt par bien (15 min)
+                    const totalDuration = durH + (mission.length * 0.25);
+
+                    document.getElementById('missionDistance').textContent = distKm.toFixed(1);
+                    document.getElementById('missionDuration').textContent = totalDuration.toFixed(1);
+
+                    console.log(`Itinéraire IGN : ${distKm.toFixed(1)} km, ${durH.toFixed(2)}h de route + ${(mission.length * 0.25).toFixed(2)}h d'arrêts`);
+                    showToast(`Itinéraire IGN calculé : ${distKm.toFixed(1)} km`);
+                }
+
+                // Stocker la géométrie pour l'affichage sur la carte
+                if (data.geometry) {
+                    currentMissionData._ignGeometry = data.geometry;
+                    currentMissionData._ignBbox = data.bbox;
+                }
+
+                // Mettre à jour les distances par étape si disponible
+                if (data.portions) {
+                    let cumDist = 0;
+                    data.portions.forEach((portion, i) => {
+                        const portionDist = typeof portion.distance === 'number' ? portion.distance : parseFloat(portion.distance);
+                        cumDist += portionDist;
+                        const stepEl = document.getElementById(`step-distance-${i + 1}`);
+                        if (stepEl) {
+                            stepEl.textContent = `📏 ${cumDist.toFixed(1)} km cumulés (+${portionDist.toFixed(1)} km route)`;
+                        }
+                    });
+                }
+
+            } catch (error) {
+                console.warn('Calcul IGN indisponible, distances à vol d\'oiseau conservées:', error.message);
+            }
+        }
+
+        function showMissionOnMap() {
+            if (currentMissionData.length === 0) {
+                showToast('Générez d\'abord une mission');
+                return;
+            }
+
+            switchScreen('map');
+
+            ensureMapReady(() => {
+                setTimeout(() => {
+                    map.invalidateSize();
+
+                    // Supprimer l'ancien tracé
+                    if (missionRouteLayer) {
+                        map.removeLayer(missionRouteLayer);
+                        missionRouteLayer = null;
+                    }
+
+                    // Si on a la géométrie IGN, l'afficher
+                    if (currentMissionData._ignGeometry) {
+                        try {
+                            missionRouteLayer = L.geoJSON(currentMissionData._ignGeometry, {
+                                style: {
+                                    color: '#00a99d',
+                                    weight: 4,
+                                    opacity: 0.8
+                                }
+                            }).addTo(map);
+                        } catch (e) {
+                            console.warn('Erreur affichage géométrie IGN:', e);
+                        }
+                    }
+
+                    // Ajouter les marqueurs numérotés de la mission
+                    const missionMarkers = L.layerGroup();
+                    const bounds = [];
+
+                    currentMissionData.forEach((dpe, index) => {
+                        const coords = getPropertyCoords(dpe);
+                        if (!coords) return;
+
+                        bounds.push([coords.lat, coords.lng]);
+
+                        const marker = L.marker([coords.lat, coords.lng], {
+                            icon: L.divIcon({
+                                html: `<div style="
+                                    background: ${index === 0 ? '#00a99d' : '#e74c3c'};
+                                    color: white;
+                                    width: 28px;
+                                    height: 28px;
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-weight: bold;
+                                    font-size: 14px;
+                                    border: 2px solid white;
+                                    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                                ">${index + 1}</div>`,
+                                iconSize: [28, 28],
+                                iconAnchor: [14, 14]
+                            })
+                        });
+
+                        marker.bindPopup(`
+                            <strong>Étape ${index + 1}</strong><br>
+                            ${dpe.adresse_brut}<br>
+                            <small>${dpe.commune || `CP ${dpe.code_postal_brut}`}</small><br>
+                            <small>Classe ${dpe.classe_consommation_energie || 'N/A'}</small>
+                        `);
+
+                        missionMarkers.addLayer(marker);
+                    });
+
+                    missionMarkers.addTo(map);
+
+                    // Si pas de géométrie IGN, tracer une ligne simple entre les points
+                    if (!currentMissionData._ignGeometry && bounds.length > 1) {
+                        missionRouteLayer = L.polyline(bounds, {
+                            color: '#00a99d',
+                            weight: 3,
+                            opacity: 0.7,
+                            dashArray: '10, 10'
+                        }).addTo(map);
+                    }
+
+                    if (bounds.length > 0) {
+                        map.fitBounds(bounds, { padding: [50, 50] });
+                    }
+
+                    showToast('Itinéraire affiché sur la carte');
+                }, 300);
+            });
         }
 
         function calculateDistanceBetweenProperties(prop1, prop2) {
