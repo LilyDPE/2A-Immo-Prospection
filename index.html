@@ -1493,6 +1493,96 @@
             </div>
         </div>
 
+        <!-- Screen 8: Paramètres / Alertes -->
+        <div class="screen" id="settingsScreen">
+            <div class="container">
+                <div class="card">
+                    <h3 style="margin-bottom: 15px; color: var(--primary);">⚙️ Paramètres</h3>
+                </div>
+
+                <div class="card">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">🔔 Alertes Nouveaux Biens</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                        Recevez des notifications push quand de nouveaux DPE apparaissent dans votre zone de prospection
+                    </p>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="enableNotifications" onchange="toggleNotifications()" style="width: auto;">
+                            <span style="font-weight: 600;">Activer les alertes push</span>
+                        </label>
+                        <div id="notificationStatus" style="margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 0.9em;"></div>
+                    </div>
+
+                    <div id="alertSettings" style="display: none; margin-top: 20px;">
+                        <div class="form-group">
+                            <label>📍 Codes Postaux à surveiller</label>
+                            <input type="text" id="alertPostalCodes" placeholder="Ex: 76260, 76600, 76000">
+                            <div class="label-help">Séparez les codes postaux par des virgules</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>⏱️ Fréquence de vérification</label>
+                            <select id="alertFrequency">
+                                <option value="15">Toutes les 15 minutes</option>
+                                <option value="30" selected>Toutes les 30 minutes</option>
+                                <option value="60">Toutes les heures</option>
+                                <option value="120">Toutes les 2 heures</option>
+                                <option value="240">Toutes les 4 heures</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>🎯 Filtres</label>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" id="alertOnlyNew" checked style="width: auto;">
+                                <span>Seulement les DPE des dernières 24h</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="alertExcludeSeen" checked style="width: auto;">
+                                <span>Exclure les biens déjà consultés</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label>⚡ Classes énergétiques à surveiller</label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" class="alert-class-filter" value="E" checked style="width: auto;">
+                                    <span>E</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" class="alert-class-filter" value="F" checked style="width: auto;">
+                                    <span>F</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" class="alert-class-filter" value="G" checked style="width: auto;">
+                                    <span>G</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" class="alert-class-filter" value="D" style="width: auto;">
+                                    <span>D</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" class="alert-class-filter" value="C" style="width: auto;">
+                                    <span>C</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="saveAlertSettings()" style="width: 100%; margin-top: 15px;">
+                            💾 Sauvegarder les paramètres
+                        </button>
+
+                        <div style="margin-top: 15px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                            <div style="font-weight: 600; margin-bottom: 5px;">📊 État de la surveillance</div>
+                            <div id="alertMonitorStatus" style="color: #666; font-size: 0.9em;">En attente de configuration...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Bottom Navigation -->
         <div class="bottom-nav">
             <button class="nav-item active" onclick="switchScreen('search')">
@@ -1520,8 +1610,13 @@
                 <span class="nav-label">Contacts</span>
                 <span class="nav-badge" id="contactsBadge" style="display: none;">0</span>
             </button>
-            <button class="nav-item" id="adminNav" style="display: none;" onclick="switchScreen('admin')">
+            <button class="nav-item" onclick="switchScreen('settings')">
                 <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Alertes</span>
+                <span class="nav-badge" id="alertsBadge" style="display: none; background: #00a99d;">●</span>
+            </button>
+            <button class="nav-item" id="adminNav" style="display: none;" onclick="switchScreen('admin')">
+                <span class="nav-icon">👑</span>
                 <span class="nav-label">Admin</span>
             </button>
         </div>
@@ -1713,18 +1808,19 @@
 
         function initializeApp() {
             console.log('🚀 Initialisation de l\'application...');
-            
+
             setTimeout(() => {
                 initMap();
                 loadLocalData();
                 updateStats();
                 updateAchievements();
                 loadContacts();
-                
+                initializeAlertSettings();
+
                 if (currentUser.role === 'admin') {
                     loadAdminData();
                 }
-                
+
                 console.log('✅ Application initialisée');
             }, 100);
         }
@@ -1824,7 +1920,8 @@
                 'mission': { el: 'missionScreen', nav: 3 },
                 'stats': { el: 'statsScreen', nav: 4 },
                 'contacts': { el: 'contactsScreen', nav: 5 },
-                'admin': { el: 'adminScreen', nav: 6 }
+                'settings': { el: 'settingsScreen', nav: 6 },
+                'admin': { el: 'adminScreen', nav: 7 }
             };
 
             if (screens[screen]) {
@@ -3731,6 +3828,286 @@
             currentStepIndex = 0;
 
             showToast('Mode guidage arrêté');
+        }
+
+        // ============================================
+        // ALERTES PUSH - SURVEILLANCE NOUVEAUX BIENS
+        // ============================================
+
+        let notificationPermission = false;
+        let alertMonitorInterval = null;
+        let lastCheckedDPEIds = new Set();
+
+        function initializeAlertSettings() {
+            // Charger les paramètres sauvegardés
+            const settings = JSON.parse(localStorage.getItem('alertSettings') || '{}');
+
+            if (settings.enabled) {
+                document.getElementById('enableNotifications').checked = true;
+                document.getElementById('alertSettings').style.display = 'block';
+            }
+
+            if (settings.postalCodes) {
+                document.getElementById('alertPostalCodes').value = settings.postalCodes;
+            }
+
+            if (settings.frequency) {
+                document.getElementById('alertFrequency').value = settings.frequency;
+            }
+
+            if (settings.classes) {
+                document.querySelectorAll('.alert-class-filter').forEach(cb => {
+                    cb.checked = settings.classes.includes(cb.value);
+                });
+            }
+
+            document.getElementById('alertOnlyNew').checked = settings.onlyNew !== false;
+            document.getElementById('alertExcludeSeen').checked = settings.excludeSeen !== false;
+
+            // Vérifier si les notifications sont déjà actives
+            if ('Notification' in window) {
+                updateNotificationStatus();
+            }
+
+            // Redémarrer la surveillance si elle était active
+            if (settings.enabled && settings.postalCodes) {
+                startAlertMonitoring();
+            }
+        }
+
+        async function toggleNotifications() {
+            const enabled = document.getElementById('enableNotifications').checked;
+
+            if (enabled) {
+                if (!('Notification' in window)) {
+                    showToast('❌ Votre navigateur ne supporte pas les notifications');
+                    document.getElementById('enableNotifications').checked = false;
+                    return;
+                }
+
+                const permission = await Notification.requestPermission();
+
+                if (permission === 'granted') {
+                    notificationPermission = true;
+                    document.getElementById('alertSettings').style.display = 'block';
+                    updateNotificationStatus();
+                    showToast('✅ Notifications activées !');
+
+                    // Notification de test
+                    new Notification('🏠 2A Immo Prospection', {
+                        body: 'Les alertes sont maintenant activées !',
+                        icon: 'https://lilydpe.github.io/2A-Immo-Prospection/icon.png',
+                        badge: 'https://lilydpe.github.io/2A-Immo-Prospection/badge.png'
+                    });
+                } else {
+                    showToast('❌ Permission refusée. Activez les notifications dans les paramètres du navigateur.');
+                    document.getElementById('enableNotifications').checked = false;
+                    updateNotificationStatus();
+                }
+            } else {
+                document.getElementById('alertSettings').style.display = 'none';
+                stopAlertMonitoring();
+                updateNotificationStatus();
+                showToast('Alertes désactivées');
+            }
+        }
+
+        function updateNotificationStatus() {
+            const statusDiv = document.getElementById('notificationStatus');
+
+            if (!('Notification' in window)) {
+                statusDiv.innerHTML = '<div style="background: #ffebee; color: #c62828; padding: 10px; border-radius: 5px;">❌ Notifications non supportées</div>';
+                return;
+            }
+
+            const permission = Notification.permission;
+
+            if (permission === 'granted') {
+                statusDiv.innerHTML = '<div style="background: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 5px;">✅ Notifications autorisées</div>';
+                document.getElementById('alertsBadge').style.display = 'inline-block';
+            } else if (permission === 'denied') {
+                statusDiv.innerHTML = '<div style="background: #ffebee; color: #c62828; padding: 10px; border-radius: 5px;">❌ Notifications bloquées. Modifiez les paramètres du navigateur.</div>';
+            } else {
+                statusDiv.innerHTML = '<div style="background: #fff3e0; color: #e65100; padding: 10px; border-radius: 5px;">⏳ Cliquez pour autoriser les notifications</div>';
+            }
+        }
+
+        function saveAlertSettings() {
+            const postalCodes = document.getElementById('alertPostalCodes').value.trim();
+
+            if (!postalCodes) {
+                showToast('⚠️ Veuillez entrer au moins un code postal');
+                return;
+            }
+
+            const selectedClasses = Array.from(document.querySelectorAll('.alert-class-filter:checked')).map(cb => cb.value);
+
+            const settings = {
+                enabled: document.getElementById('enableNotifications').checked,
+                postalCodes: postalCodes,
+                frequency: parseInt(document.getElementById('alertFrequency').value),
+                onlyNew: document.getElementById('alertOnlyNew').checked,
+                excludeSeen: document.getElementById('alertExcludeSeen').checked,
+                classes: selectedClasses
+            };
+
+            localStorage.setItem('alertSettings', JSON.stringify(settings));
+            showToast('✅ Paramètres sauvegardés !');
+
+            // Redémarrer la surveillance
+            if (settings.enabled) {
+                startAlertMonitoring();
+            }
+        }
+
+        function startAlertMonitoring() {
+            stopAlertMonitoring(); // Arrêter l'ancien intervalle s'il existe
+
+            const settings = JSON.parse(localStorage.getItem('alertSettings') || '{}');
+
+            if (!settings.enabled || !settings.postalCodes) return;
+
+            const frequency = settings.frequency || 30; // minutes
+            const frequencyMs = frequency * 60 * 1000;
+
+            // Première vérification immédiate
+            checkForNewDPE();
+
+            // Puis vérifications périodiques
+            alertMonitorInterval = setInterval(checkForNewDPE, frequencyMs);
+
+            const monitorStatus = document.getElementById('alertMonitorStatus');
+            if (monitorStatus) {
+                monitorStatus.innerHTML = `✅ Surveillance active - Prochaine vérification dans ${frequency} min<br><small>Zones: ${settings.postalCodes}</small>`;
+            }
+
+            showToast(`🔔 Surveillance activée (vérif. toutes les ${frequency} min)`);
+        }
+
+        function stopAlertMonitoring() {
+            if (alertMonitorInterval) {
+                clearInterval(alertMonitorInterval);
+                alertMonitorInterval = null;
+            }
+
+            const monitorStatus = document.getElementById('alertMonitorStatus');
+            if (monitorStatus) {
+                monitorStatus.innerHTML = '⏸️ Surveillance en pause';
+            }
+        }
+
+        async function checkForNewDPE() {
+            const settings = JSON.parse(localStorage.getItem('alertSettings') || '{}');
+
+            if (!settings.enabled || !settings.postalCodes) return;
+
+            try {
+                const codesPostaux = settings.postalCodes.split(/[,;\s]+/).map(cp => cp.trim()).filter(cp => cp.length > 0);
+
+                // Date de référence
+                let dateDebut, dateFin;
+                if (settings.onlyNew) {
+                    // Dernières 24h
+                    const now = new Date();
+                    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    dateDebut = yesterday.toISOString().split('T')[0];
+                    dateFin = now.toISOString().split('T')[0];
+                } else {
+                    // Semaine en cours
+                    const now = new Date();
+                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    dateDebut = weekAgo.toISOString().split('T')[0];
+                    dateFin = now.toISOString().split('T')[0];
+                }
+
+                const url = 'https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant/lines';
+                const postalCodesQuery = codesPostaux.map(cp => `code_postal_brut:${cp}`).join(' OR ');
+                let qs = `(${postalCodesQuery}) AND date_etablissement_dpe:[${dateDebut} TO ${dateFin}]`;
+
+                const params = new URLSearchParams({
+                    size: 50,
+                    qs: qs
+                });
+
+                const response = await fetch(`${url}?${params}`);
+                if (!response.ok) return;
+
+                const data = await response.json();
+                let newDPEs = data.results || [];
+
+                // Filtrer par classe énergétique
+                if (settings.classes && settings.classes.length > 0) {
+                    newDPEs = newDPEs.filter(dpe => settings.classes.includes(dpe.classe_consommation_energie));
+                }
+
+                // Exclure les DPE déjà vus
+                if (settings.excludeSeen) {
+                    const seenProperties = JSON.parse(localStorage.getItem('seenProperties') || '{}');
+                    const userSeenIds = new Set(Object.keys(seenProperties[currentUser.uid] || {}));
+                    newDPEs = newDPEs.filter(dpe => !userSeenIds.has(dpe._id));
+                }
+
+                // Trouver les DPE vraiment nouveaux (pas encore notifiés)
+                const trulyNewDPEs = newDPEs.filter(dpe => !lastCheckedDPEIds.has(dpe._id));
+
+                // Mettre à jour le cache des IDs
+                newDPEs.forEach(dpe => lastCheckedDPEIds.add(dpe._id));
+
+                // Limiter la taille du cache
+                if (lastCheckedDPEIds.size > 500) {
+                    const idsArray = Array.from(lastCheckedDPEIds);
+                    lastCheckedDPEIds = new Set(idsArray.slice(-300));
+                }
+
+                // Envoyer notifications pour les nouveaux DPE
+                if (trulyNewDPEs.length > 0 && Notification.permission === 'granted') {
+                    sendNewDPENotifications(trulyNewDPEs);
+                }
+
+                // Mettre à jour le statut
+                const monitorStatus = document.getElementById('alertMonitorStatus');
+                if (monitorStatus) {
+                    const now = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    const nextCheck = new Date(Date.now() + (settings.frequency || 30) * 60 * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    monitorStatus.innerHTML = `✅ Dernière vérif: ${now} - Prochain: ${nextCheck}<br><small>${trulyNewDPEs.length} nouveau(x) bien(s) trouvé(s)</small>`;
+                }
+
+            } catch (error) {
+                console.error('Erreur vérification nouveaux DPE:', error);
+            }
+        }
+
+        function sendNewDPENotifications(newDPEs) {
+            if (newDPEs.length === 0) return;
+
+            // Grouper par commune si beaucoup de DPE
+            if (newDPEs.length === 1) {
+                const dpe = newDPEs[0];
+                new Notification(`🏠 Nouveau bien ${dpe.commune || 'CP ' + dpe.code_postal_brut}`, {
+                    body: `${dpe.adresse_brut}\nClasse ${dpe.classe_consommation_energie || 'N/A'}`,
+                    icon: 'https://lilydpe.github.io/2A-Immo-Prospection/icon.png',
+                    tag: 'new-dpe-' + dpe._id,
+                    requireInteraction: false
+                });
+            } else if (newDPEs.length <= 5) {
+                newDPEs.forEach(dpe => {
+                    new Notification(`🏠 Nouveau bien ${dpe.commune || 'CP ' + dpe.code_postal_brut}`, {
+                        body: `${dpe.adresse_brut}\nClasse ${dpe.classe_consommation_energie || 'N/A'}`,
+                        icon: 'https://lilydpe.github.io/2A-Immo-Prospection/icon.png',
+                        tag: 'new-dpe-' + dpe._id,
+                        requireInteraction: false
+                    });
+                });
+            } else {
+                // Notification groupée
+                const communes = [...new Set(newDPEs.map(dpe => dpe.commune || 'CP ' + dpe.code_postal_brut))];
+                new Notification(`🏠 ${newDPEs.length} nouveaux biens disponibles !`, {
+                    body: `Dans: ${communes.slice(0, 3).join(', ')}${communes.length > 3 ? '...' : ''}`,
+                    icon: 'https://lilydpe.github.io/2A-Immo-Prospection/icon.png',
+                    tag: 'new-dpe-batch',
+                    requireInteraction: true
+                });
+            }
         }
 
         // ============================================
