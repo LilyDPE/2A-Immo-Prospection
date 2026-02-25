@@ -1493,7 +1493,93 @@
             </div>
         </div>
 
-        <!-- Screen 8: Paramètres / Alertes -->
+        <!-- Screen 8: Assistant IA -->
+        <div class="screen" id="aiScreen">
+            <div class="container">
+                <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h3 style="margin-bottom: 10px; color: white;">🤖 Assistant IA Prospection</h3>
+                    <p style="opacity: 0.9; font-size: 0.9em;">Intelligence artificielle pour optimiser votre prospection</p>
+                </div>
+
+                <!-- Scoring automatique -->
+                <div class="card">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">⭐ Scoring Intelligent</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                        Analyse automatique du potentiel de chaque bien basé sur plusieurs critères
+                    </p>
+                    <button class="btn btn-primary" onclick="runAIScoring()" style="width: 100%;">
+                        🎯 Analyser tous les biens
+                    </button>
+                    <div id="scoringResults" style="margin-top: 15px;"></div>
+                </div>
+
+                <!-- Génération de messages -->
+                <div class="card">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">✉️ Générateur de Messages</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                        Créez des messages personnalisés pour contacter les propriétaires
+                    </p>
+
+                    <div class="form-group">
+                        <label>Sélectionnez un bien</label>
+                        <select id="aiPropertySelect" onchange="generateMessage()">
+                            <option value="">-- Choisir un bien --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Type de message</label>
+                        <select id="messageType" onchange="generateMessage()">
+                            <option value="first-contact">Premier contact</option>
+                            <option value="follow-up">Relance</option>
+                            <option value="urgency">Urgence rénovation</option>
+                            <option value="benefit">Mise en avant bénéfices</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ton du message</label>
+                        <select id="messageTone" onchange="generateMessage()">
+                            <option value="professional">Professionnel</option>
+                            <option value="friendly">Amical</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-accent" onclick="generateMessage()" style="width: 100%; margin-bottom: 15px;">
+                        ✨ Générer le message
+                    </button>
+
+                    <div id="generatedMessage" style="display: none;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Message généré :</label>
+                        <div id="messageContent" style="padding: 15px; background: #f5f5f5; border-radius: 8px; white-space: pre-wrap; line-height: 1.6; margin-bottom: 10px;"></div>
+                        <button class="btn btn-secondary" onclick="copyMessage()" style="width: 100%;">
+                            📋 Copier le message
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Suggestions d'argumentaires -->
+                <div class="card">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">💡 Argumentaires Suggérés</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                        Arguments de vente adaptés selon le profil du bien
+                    </p>
+                    <div id="aiArguments"></div>
+                </div>
+
+                <!-- Priorisation intelligente -->
+                <div class="card">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">🎯 Top Prospects</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                        Les biens les plus prometteurs à contacter en priorité
+                    </p>
+                    <div id="topProspects"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 9: Paramètres / Alertes -->
         <div class="screen" id="settingsScreen">
             <div class="container">
                 <div class="card">
@@ -1609,6 +1695,10 @@
                 <span class="nav-icon">📞</span>
                 <span class="nav-label">Contacts</span>
                 <span class="nav-badge" id="contactsBadge" style="display: none;">0</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('ai')">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-label">IA</span>
             </button>
             <button class="nav-item" onclick="switchScreen('settings')">
                 <span class="nav-icon">⚙️</span>
@@ -1920,8 +2010,9 @@
                 'mission': { el: 'missionScreen', nav: 3 },
                 'stats': { el: 'statsScreen', nav: 4 },
                 'contacts': { el: 'contactsScreen', nav: 5 },
-                'settings': { el: 'settingsScreen', nav: 6 },
-                'admin': { el: 'adminScreen', nav: 7 }
+                'ai': { el: 'aiScreen', nav: 6 },
+                'settings': { el: 'settingsScreen', nav: 7 },
+                'admin': { el: 'adminScreen', nav: 8 }
             };
 
             if (screens[screen]) {
@@ -4108,6 +4199,344 @@
                     requireInteraction: true
                 });
             }
+        }
+
+        // ============================================
+        // ASSISTANT IA - SCORING & MESSAGES
+        // ============================================
+
+        function calculatePropertyScore(dpe) {
+            let score = 0;
+            const reasons = [];
+
+            // 1. Classe énergétique (max 30 points)
+            const classeScores = { 'G': 30, 'F': 25, 'E': 20, 'D': 10, 'C': 5, 'B': 2, 'A': 1 };
+            const classeScore = classeScores[dpe.classe_consommation_energie] || 0;
+            score += classeScore;
+            if (classeScore >= 20) {
+                reasons.push(`Passoire énergétique (${dpe.classe_consommation_energie})`);
+            }
+
+            // 2. Date du DPE - Plus c'est récent, mieux c'est (max 20 points)
+            if (dpe.date_etablissement_dpe) {
+                const dpeDate = new Date(dpe.date_etablissement_dpe);
+                const daysSince = (Date.now() - dpeDate.getTime()) / (1000 * 60 * 60 * 24);
+                if (daysSince < 30) {
+                    score += 20;
+                    reasons.push('DPE très récent (< 30j)');
+                } else if (daysSince < 90) {
+                    score += 15;
+                    reasons.push('DPE récent (< 3 mois)');
+                } else if (daysSince < 180) {
+                    score += 10;
+                }
+            }
+
+            // 3. Type de bien (max 15 points)
+            const typeBien = (dpe.tr002_type_batiment_description || '').toLowerCase();
+            if (typeBien.includes('maison')) {
+                score += 15;
+                reasons.push('Maison individuelle (fort potentiel)');
+            } else if (typeBien.includes('appartement') || typeBien.includes('immeuble')) {
+                score += 10;
+                reasons.push('Appartement/Immeuble');
+            }
+
+            // 4. Surface habitable (max 15 points)
+            const surface = parseFloat(dpe.surface_habitable_logement);
+            if (surface) {
+                if (surface >= 80 && surface <= 150) {
+                    score += 15;
+                    reasons.push(`Surface optimale (${surface}m²)`);
+                } else if (surface >= 50 && surface < 80) {
+                    score += 10;
+                } else if (surface > 150 && surface <= 200) {
+                    score += 12;
+                    reasons.push(`Grande surface (${surface}m²)`);
+                }
+            }
+
+            // 5. Consommation énergétique élevée (max 10 points)
+            const conso = parseFloat(dpe.consommation_energie);
+            if (conso > 400) {
+                score += 10;
+                reasons.push('Très forte consommation');
+            } else if (conso > 300) {
+                score += 7;
+            }
+
+            // 6. Statut prospection (max 10 points)
+            const status = getPropertyStatus(dpe);
+            if (status === 'nouveau') {
+                score += 10;
+                reasons.push('Jamais contacté');
+            } else if (status === 'interesse') {
+                score += 5;
+                reasons.push('Déjà intéressé !');
+            }
+
+            // Score final sur 100
+            return {
+                score: Math.min(100, score),
+                grade: score >= 70 ? '🔥 Chaud' : score >= 50 ? '⭐ Bon' : score >= 30 ? '👍 Moyen' : '❄️ Faible',
+                reasons: reasons
+            };
+        }
+
+        function runAIScoring() {
+            if (filteredData.length === 0) {
+                showToast('Aucun bien à analyser. Faites d\'abord une recherche.');
+                return;
+            }
+
+            showToast('🤖 Analyse en cours...');
+
+            // Calculer les scores
+            const scoredProperties = filteredData.map(dpe => ({
+                dpe: dpe,
+                scoring: calculatePropertyScore(dpe)
+            }));
+
+            // Trier par score décroissant
+            scoredProperties.sort((a, b) => b.scoring.score - a.scoring.score);
+
+            // Afficher les résultats
+            const resultsDiv = document.getElementById('scoringResults');
+            const top10 = scoredProperties.slice(0, 10);
+
+            resultsDiv.innerHTML = `
+                <div style="padding: 15px; background: #e8f5e9; border-radius: 8px; margin-bottom: 15px;">
+                    <strong>✅ ${filteredData.length} biens analysés</strong><br>
+                    <small>Voici les 10 meilleurs prospects</small>
+                </div>
+                ${top10.map((item, index) => `
+                    <div style="padding: 12px; background: ${index < 3 ? '#fff3e0' : '#f5f5f5'}; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${item.scoring.score >= 70 ? '#e74c3c' : item.scoring.score >= 50 ? '#f39c12' : '#95a5a6'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong>${index + 1}. ${item.dpe.adresse_brut}</strong>
+                            <span style="background: ${item.scoring.score >= 70 ? '#e74c3c' : item.scoring.score >= 50 ? '#f39c12' : '#95a5a6'}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">
+                                ${item.scoring.score}/100
+                            </span>
+                        </div>
+                        <div style="font-size: 0.85em; color: #666; margin-bottom: 6px;">
+                            ${item.dpe.commune || 'CP ' + item.dpe.code_postal_brut} - ${item.scoring.grade}
+                        </div>
+                        <div style="font-size: 0.8em; color: #555;">
+                            ${item.scoring.reasons.map(r => `✓ ${r}`).join('<br>')}
+                        </div>
+                        <button class="btn btn-small btn-primary" onclick="viewPropertyDetails(${filteredData.indexOf(item.dpe)})" style="margin-top: 8px;">
+                            👁️ Voir le bien
+                        </button>
+                    </div>
+                `).join('')}
+            `;
+
+            // Mettre à jour le sélecteur de biens
+            updateAIPropertySelect(scoredProperties);
+
+            // Mettre à jour les top prospects
+            updateTopProspects(scoredProperties.slice(0, 5));
+
+            showToast('✅ Analyse terminée !');
+        }
+
+        function updateAIPropertySelect(scoredProperties) {
+            const select = document.getElementById('aiPropertySelect');
+            select.innerHTML = '<option value="">-- Choisir un bien --</option>' +
+                scoredProperties.slice(0, 20).map((item, index) => {
+                    const dpe = item.dpe;
+                    return `<option value="${filteredData.indexOf(dpe)}">${dpe.adresse_brut} (Score: ${item.scoring.score}/100)</option>`;
+                }).join('');
+        }
+
+        function updateTopProspects(topProperties) {
+            const div = document.getElementById('topProspects');
+            if (topProperties.length === 0) {
+                div.innerHTML = '<p style="color: #999; text-align: center;">Lancez d\'abord l\'analyse des biens</p>';
+                return;
+            }
+
+            div.innerHTML = topProperties.map((item, index) => `
+                <div style="padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong style="font-size: 1.1em;">🏆 #${index + 1} ${item.dpe.adresse_brut}</strong>
+                        <span style="background: rgba(255,255,255,0.3); padding: 4px 10px; border-radius: 20px; font-weight: bold;">
+                            ${item.scoring.score}/100
+                        </span>
+                    </div>
+                    <div style="opacity: 0.9; font-size: 0.9em; margin-bottom: 8px;">
+                        ${item.dpe.commune || 'CP ' + item.dpe.code_postal_brut} - Classe ${item.dpe.classe_consommation_energie || 'N/A'}
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-small" style="background: white; color: #667eea; flex: 1;" onclick="generateMessageForProperty(${filteredData.indexOf(item.dpe)})">
+                            ✉️ Message
+                        </button>
+                        <button class="btn btn-small" style="background: rgba(255,255,255,0.2); color: white; flex: 1;" onclick="viewPropertyDetails(${filteredData.indexOf(item.dpe)})">
+                            👁️ Détails
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function generateMessageForProperty(index) {
+            document.getElementById('aiPropertySelect').value = index;
+            switchScreen('ai');
+            setTimeout(() => generateMessage(), 300);
+        }
+
+        function generateMessage() {
+            const selectEl = document.getElementById('aiPropertySelect');
+            const index = parseInt(selectEl.value);
+
+            if (isNaN(index) || index < 0) {
+                document.getElementById('generatedMessage').style.display = 'none';
+                return;
+            }
+
+            const dpe = filteredData[index];
+            const messageType = document.getElementById('messageType').value;
+            const tone = document.getElementById('messageTone').value;
+
+            const message = createPersonalizedMessage(dpe, messageType, tone);
+
+            document.getElementById('messageContent').textContent = message;
+            document.getElementById('generatedMessage').style.display = 'block';
+
+            // Générer aussi les argumentaires
+            generateArguments(dpe);
+        }
+
+        function createPersonalizedMessage(dpe, type, tone) {
+            const address = dpe.adresse_brut || 'votre bien';
+            const commune = dpe.commune || '';
+            const classe = dpe.classe_consommation_energie || 'N/A';
+            const surface = dpe.surface_habitable_logement ? `${dpe.surface_habitable_logement}m²` : '';
+            const conso = dpe.consommation_energie ? Math.round(dpe.consommation_energie) : '';
+
+            let greeting, intro, body, closing, signature;
+
+            // Salutation selon le ton
+            if (tone === 'professional') {
+                greeting = 'Madame, Monsieur,';
+                signature = 'Cordialement,\n[Votre nom]\n2A Immo Prospection\n[Votre téléphone]';
+            } else if (tone === 'friendly') {
+                greeting = 'Bonjour,';
+                signature = 'Bien cordialement,\n[Votre prénom]\n[Votre téléphone]';
+            } else {
+                greeting = 'Bonjour,';
+                signature = 'Cordialement,\n[Votre nom]\n[Votre téléphone]';
+            }
+
+            // Corps du message selon le type
+            if (type === 'first-contact') {
+                intro = `Je me permets de vous contacter concernant votre bien situé ${address}${commune ? ' à ' + commune : ''}.`;
+                body = `D'après le diagnostic de performance énergétique (classe ${classe}${conso ? ', ' + conso + ' kWh/m²/an' : ''}), votre logement pourrait bénéficier d'une rénovation énergétique.\n\nNous accompagnons les propriétaires dans leurs projets de rénovation et pouvons vous aider à :\n• Réduire significativement vos factures d'énergie\n• Améliorer votre confort thermique\n• Valoriser votre patrimoine\n• Bénéficier des aides de l'État (MaPrimeRénov', CEE, etc.)`;
+                closing = 'Seriez-vous disponible pour un échange téléphonique afin d\'étudier ensemble les possibilités d\'amélioration de votre bien ?';
+            } else if (type === 'follow-up') {
+                intro = `Je reviens vers vous suite à mon précédent message concernant votre bien ${address}.`;
+                body = `Les aides à la rénovation énergétique sont particulièrement avantageuses en ce moment, et votre logement (classe ${classe}) est éligible à plusieurs dispositifs.\n\nNous pouvons vous proposer un audit gratuit pour évaluer précisément le potentiel d'amélioration et les aides dont vous pouvez bénéficier.`;
+                closing = 'Auriez-vous quelques minutes cette semaine pour en discuter ?';
+            } else if (type === 'urgency') {
+                intro = `IMPORTANT : Votre bien ${address} est concerné par les nouvelles réglementations sur les passoires énergétiques.`;
+                body = `À partir de 2025, les logements classés G ne pourront plus être loués. La classe ${classe} de votre bien signifie qu'${classe === 'G' || classe === 'F' ? 'il est prioritaire d\'agir' : 'une amélioration serait bénéfique'}.\n\nBonne nouvelle : des aides importantes sont disponibles pour financer vos travaux de rénovation (jusqu'à 90% du montant selon vos revenus).`;
+                closing = 'Je peux vous rappeler rapidement pour vous présenter les solutions adaptées à votre situation. Quand seriez-vous disponible ?';
+            } else { // benefit
+                intro = `Propriétaire ${address}${commune ? ' à ' + commune : ''}, voici ce que vous pourriez gagner avec une rénovation énergétique :`;
+                body = `✓ Jusqu'à -60% sur vos factures de chauffage\n✓ Un logement plus confortable été comme hiver\n✓ Une valeur immobilière augmentée de 15 à 25%\n✓ Des aides financières couvrant jusqu'à 90% des travaux\n\nVotre bien (classe ${classe}${surface ? ', ' + surface : ''}) a un excellent potentiel d'amélioration.`;
+                closing = 'Je serais ravi de vous présenter un plan de rénovation personnalisé. Êtes-vous intéressé(e) par un premier échange ?';
+            }
+
+            return `${greeting}\n\n${intro}\n\n${body}\n\n${closing}\n\n${signature}`;
+        }
+
+        function generateArguments(dpe) {
+            const classe = dpe.classe_consommation_energie || 'N/A';
+            const surface = parseFloat(dpe.surface_habitable_logement);
+            const conso = parseFloat(dpe.consommation_energie);
+            const typeBien = (dpe.tr002_type_batiment_description || '').toLowerCase();
+
+            const arguments = [];
+
+            // Arguments selon la classe
+            if (classe === 'G' || classe === 'F') {
+                arguments.push({
+                    icon: '🚨',
+                    title: 'Urgence réglementaire',
+                    text: `Les logements classe ${classe} seront interdits à la location dès 2025-2028. Anticiper permet d'éviter la dévaluation.`
+                });
+            }
+
+            if (classe === 'E' || classe === 'F' || classe === 'G') {
+                arguments.push({
+                    icon: '💰',
+                    title: 'Aides maximales',
+                    text: 'MaPrimeRénov\' Sérénité peut financer jusqu\'à 90% des travaux pour les ménages modestes, 75% pour les autres.'
+                });
+            }
+
+            // Arguments selon la consommation
+            if (conso > 300) {
+                const economy = Math.round((conso - 150) * surface * 0.15 / 100) * 100;
+                arguments.push({
+                    icon: '📉',
+                    title: 'Économies importantes',
+                    text: `Avec ${Math.round(conso)} kWh/m²/an, vous pourriez économiser environ ${economy}€/an en chauffage après rénovation.`
+                });
+            }
+
+            // Arguments selon le type
+            if (typeBien.includes('maison')) {
+                arguments.push({
+                    icon: '🏠',
+                    title: 'Maison : travaux simples',
+                    text: 'Isolation des combles et murs + changement de chauffage = gains rapides. ROI en 7-10 ans.'
+                });
+            }
+
+            // Arguments génériques
+            arguments.push({
+                icon: '🌡️',
+                title: 'Confort thermique',
+                text: 'Fini les courants d\'air et les pièces froides. Une maison bien isolée maintient 19-20°C naturellement.'
+            });
+
+            arguments.push({
+                icon: '📈',
+                title: 'Valorisation du bien',
+                text: 'Un DPE passant de F à C augmente la valeur du bien de 15 à 25% selon les études notariales.'
+            });
+
+            // Afficher
+            const div = document.getElementById('aiArguments');
+            div.innerHTML = arguments.map(arg => `
+                <div style="padding: 12px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--primary);">
+                    <div style="font-weight: 600; margin-bottom: 5px;">${arg.icon} ${arg.title}</div>
+                    <div style="font-size: 0.9em; color: #666;">${arg.text}</div>
+                </div>
+            `).join('');
+        }
+
+        function copyMessage() {
+            const message = document.getElementById('messageContent').textContent;
+            navigator.clipboard.writeText(message).then(() => {
+                showToast('📋 Message copié !');
+            }).catch(() => {
+                showToast('❌ Erreur de copie');
+            });
+        }
+
+        function viewPropertyDetails(index) {
+            switchScreen('results');
+            setTimeout(() => {
+                const resultCard = document.querySelectorAll('.result-card')[index];
+                if (resultCard) {
+                    resultCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    resultCard.style.boxShadow = '0 0 20px rgba(231, 76, 60, 0.5)';
+                    setTimeout(() => {
+                        resultCard.style.boxShadow = '';
+                    }, 2000);
+                }
+            }, 300);
         }
 
         // ============================================
