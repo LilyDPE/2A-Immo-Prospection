@@ -1118,7 +1118,13 @@
 
                 <div class="loading" id="loading" style="display: none;">
                     <div class="spinner"></div>
-                    <p>Recherche en cours...</p>
+                    <p id="loadingText">Recherche en cours...</p>
+                    <div id="progressContainer" style="display: none; margin-top: 15px; width: 100%;">
+                        <div style="background: rgba(255,255,255,0.2); border-radius: 10px; height: 20px; overflow: hidden;">
+                            <div id="progressBar" style="background: linear-gradient(90deg, #4CAF50, #45a049); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                        </div>
+                        <p id="progressText" style="margin-top: 8px; font-size: 0.9em; opacity: 0.9;">0%</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1234,12 +1240,32 @@
                         <button class="btn btn-success" style="margin-top: 15px;" onclick="showMissionOnMap()">
                             🗺️ Voir l'itinéraire sur la carte
                         </button>
-                        <button class="btn btn-primary" style="margin-top: 10px;" onclick="startMission()">
+                        <button class="btn btn-primary" style="margin-top: 10px;" onclick="startGuidedMode()">
+                            🧭 Mode Guidage GPS
+                        </button>
+                        <button class="btn" style="margin-top: 10px; background: #4285f4; color: white;" onclick="startMission()">
                             📍 Ouvrir dans Google Maps
                         </button>
                         <button class="btn btn-warning" style="margin-top: 10px;" onclick="exportMissionPDF()">
                             📄 Export PDF
                         </button>
+                    </div>
+
+                    <!-- Zone de guidage GPS -->
+                    <div id="guidedModePanel" style="display: none; margin-top: 20px;">
+                        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <h4 style="color: white; margin-bottom: 15px;">🧭 Mode Guidage Actif</h4>
+                            <div id="currentStepInfo" style="font-size: 1.1em; margin-bottom: 15px;"></div>
+                            <div id="nextStepInfo" style="padding: 15px; background: rgba(255,255,255,0.2); border-radius: 8px; margin-bottom: 15px;"></div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn" style="flex: 1; background: white; color: #667eea;" onclick="skipCurrentStep()">
+                                    ⏭️ Passer
+                                </button>
+                                <button class="btn" style="flex: 1; background: #e74c3c; color: white;" onclick="stopGuidedMode()">
+                                    ⏹️ Arrêter
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="missionSteps"></div>
@@ -1473,6 +1499,182 @@
             </div>
         </div>
 
+        <!-- Screen 8: Assistant IA -->
+        <div class="screen" id="aiScreen">
+            <div class="container">
+                <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h3 style="margin-bottom: 10px; color: white;">🤖 Assistant IA Prospection</h3>
+                    <p style="opacity: 0.9; font-size: 0.9em;">Intelligence artificielle pour optimiser votre prospection</p>
+                </div>
+
+                <!-- Scoring automatique -->
+                <div class="card">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">⭐ Scoring Intelligent</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                        Analyse automatique du potentiel de chaque bien basé sur plusieurs critères
+                    </p>
+                    <button class="btn btn-primary" onclick="runAIScoring()" style="width: 100%;">
+                        🎯 Analyser tous les biens
+                    </button>
+                    <div id="scoringResults" style="margin-top: 15px;"></div>
+                </div>
+
+                <!-- Génération de messages -->
+                <div class="card">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">✉️ Générateur de Messages</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                        Créez des messages personnalisés pour contacter les propriétaires
+                    </p>
+
+                    <div class="form-group">
+                        <label>Sélectionnez un bien</label>
+                        <select id="aiPropertySelect" onchange="generateMessage()">
+                            <option value="">-- Choisir un bien --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Type de message</label>
+                        <select id="messageType" onchange="generateMessage()">
+                            <option value="first-contact">Premier contact</option>
+                            <option value="follow-up">Relance</option>
+                            <option value="urgency">Urgence rénovation</option>
+                            <option value="benefit">Mise en avant bénéfices</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ton du message</label>
+                        <select id="messageTone" onchange="generateMessage()">
+                            <option value="professional">Professionnel</option>
+                            <option value="friendly">Amical</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-accent" onclick="generateMessage()" style="width: 100%; margin-bottom: 15px;">
+                        ✨ Générer le message
+                    </button>
+
+                    <div id="generatedMessage" style="display: none;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Message généré :</label>
+                        <div id="messageContent" style="padding: 15px; background: #f5f5f5; border-radius: 8px; white-space: pre-wrap; line-height: 1.6; margin-bottom: 10px;"></div>
+                        <button class="btn btn-secondary" onclick="copyMessage()" style="width: 100%;">
+                            📋 Copier le message
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Suggestions d'argumentaires -->
+                <div class="card">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">💡 Argumentaires Suggérés</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                        Arguments de vente adaptés selon le profil du bien
+                    </p>
+                    <div id="aiArguments"></div>
+                </div>
+
+                <!-- Priorisation intelligente -->
+                <div class="card">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">🎯 Top Prospects</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                        Les biens les plus prometteurs à contacter en priorité
+                    </p>
+                    <div id="topProspects"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 9: Paramètres / Alertes -->
+        <div class="screen" id="settingsScreen">
+            <div class="container">
+                <div class="card">
+                    <h3 style="margin-bottom: 15px; color: var(--primary);">⚙️ Paramètres</h3>
+                </div>
+
+                <div class="card">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">🔔 Alertes Nouveaux Biens</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
+                        Recevez des notifications push quand de nouveaux DPE apparaissent dans votre zone de prospection
+                    </p>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="enableNotifications" onchange="toggleNotifications()" style="width: auto;">
+                            <span style="font-weight: 600;">Activer les alertes push</span>
+                        </label>
+                        <div id="notificationStatus" style="margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 0.9em;"></div>
+                    </div>
+
+                    <div id="alertSettings" style="display: none; margin-top: 20px;">
+                        <div class="form-group">
+                            <label>📍 Codes Postaux à surveiller</label>
+                            <input type="text" id="alertPostalCodes" placeholder="Ex: 76260, 76600, 76000">
+                            <div class="label-help">Séparez les codes postaux par des virgules</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>⏱️ Fréquence de vérification</label>
+                            <select id="alertFrequency">
+                                <option value="15">Toutes les 15 minutes</option>
+                                <option value="30" selected>Toutes les 30 minutes</option>
+                                <option value="60">Toutes les heures</option>
+                                <option value="120">Toutes les 2 heures</option>
+                                <option value="240">Toutes les 4 heures</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>🎯 Filtres</label>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; cursor: pointer;">
+                                <input type="checkbox" id="alertOnlyNew" checked style="width: auto;">
+                                <span>Seulement les DPE des dernières 24h</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="alertExcludeSeen" checked style="width: auto;">
+                                <span>Exclure les biens déjà consultés</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label>⚡ Classes énergétiques à surveiller</label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" class="alert-class-filter" value="E" checked style="width: auto;">
+                                    <span>E</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" class="alert-class-filter" value="F" checked style="width: auto;">
+                                    <span>F</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" class="alert-class-filter" value="G" checked style="width: auto;">
+                                    <span>G</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" class="alert-class-filter" value="D" style="width: auto;">
+                                    <span>D</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" class="alert-class-filter" value="C" style="width: auto;">
+                                    <span>C</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="saveAlertSettings()" style="width: 100%; margin-top: 15px;">
+                            💾 Sauvegarder les paramètres
+                        </button>
+
+                        <div style="margin-top: 15px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                            <div style="font-weight: 600; margin-bottom: 5px;">📊 État de la surveillance</div>
+                            <div id="alertMonitorStatus" style="color: #666; font-size: 0.9em;">En attente de configuration...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Bottom Navigation -->
         <div class="bottom-nav">
             <button class="nav-item active" onclick="switchScreen('search')">
@@ -1500,8 +1702,17 @@
                 <span class="nav-label">Contacts</span>
                 <span class="nav-badge" id="contactsBadge" style="display: none;">0</span>
             </button>
-            <button class="nav-item" id="adminNav" style="display: none;" onclick="switchScreen('admin')">
+            <button class="nav-item" onclick="switchScreen('ai')">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-label">IA</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('settings')">
                 <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Alertes</span>
+                <span class="nav-badge" id="alertsBadge" style="display: none; background: #00a99d;">●</span>
+            </button>
+            <button class="nav-item" id="adminNav" style="display: none;" onclick="switchScreen('admin')">
+                <span class="nav-icon">👑</span>
                 <span class="nav-label">Admin</span>
             </button>
         </div>
@@ -1693,18 +1904,19 @@
 
         function initializeApp() {
             console.log('🚀 Initialisation de l\'application...');
-            
+
             setTimeout(() => {
                 initMap();
                 loadLocalData();
                 updateStats();
                 updateAchievements();
                 loadContacts();
-                
+                initializeAlertSettings();
+
                 if (currentUser.role === 'admin') {
                     loadAdminData();
                 }
-                
+
                 console.log('✅ Application initialisée');
             }, 100);
         }
@@ -1804,7 +2016,9 @@
                 'mission': { el: 'missionScreen', nav: 3 },
                 'stats': { el: 'statsScreen', nav: 4 },
                 'contacts': { el: 'contactsScreen', nav: 5 },
-                'admin': { el: 'adminScreen', nav: 6 }
+                'ai': { el: 'aiScreen', nav: 6 },
+                'settings': { el: 'settingsScreen', nav: 7 },
+                'admin': { el: 'adminScreen', nav: 8 }
             };
 
             if (screens[screen]) {
@@ -1961,18 +2175,34 @@
             
             if (dpeWithoutInsee.length > 0) {
                 console.log(`⚠️ ${dpeWithoutInsee.length} DPE sans code INSEE, tentative de géocodage...`);
-                
-                for (const dpe of dpeWithoutInsee.slice(0, maxGeocode)) {
-                    if (dpe.adresse_brut && dpe.code_postal_brut) {
-                        const result = await getInseeFromAddress(dpe.adresse_brut, dpe.code_postal_brut);
-                        if (result) {
-                            dpe._code_insee_recovered = result.codeInsee;
-                            geocodeCount++;
+
+                // OPTIMISATION: Traiter par lots de 10 en parallèle au lieu de séquentiel
+                const batchSize = 10;
+                const toGeocode = dpeWithoutInsee.slice(0, maxGeocode);
+
+                for (let i = 0; i < toGeocode.length; i += batchSize) {
+                    const batch = toGeocode.slice(i, Math.min(i + batchSize, toGeocode.length));
+
+                    const batchPromises = batch.map(async (dpe) => {
+                        if (dpe.adresse_brut && dpe.code_postal_brut) {
+                            const result = await getInseeFromAddress(dpe.adresse_brut, dpe.code_postal_brut);
+                            if (result) {
+                                dpe._code_insee_recovered = result.codeInsee;
+                                return 1;
+                            }
                         }
+                        return 0;
+                    });
+
+                    const results = await Promise.all(batchPromises);
+                    geocodeCount += results.reduce((a, b) => a + b, 0);
+
+                    // Petit délai entre les lots
+                    if (i + batchSize < toGeocode.length) {
                         await new Promise(resolve => setTimeout(resolve, 50));
                     }
                 }
-                
+
                 console.log(`✅ ${geocodeCount} codes INSEE récupérés par géocodage`);
             }
             
@@ -2099,18 +2329,94 @@
             try {
                 const response = await fetch(`https://geo.api.gouv.fr/communes?lat=${lat}&lon=${lon}&fields=codesPostaux&format=json`);
                 const communes = await response.json();
-                
+
                 const postalCodes = new Set();
                 communes.slice(0, Math.ceil(radius * 2)).forEach(commune => {
                     if (commune.codesPostaux) {
                         commune.codesPostaux.forEach(cp => postalCodes.add(cp));
                     }
                 });
-                
+
                 return Array.from(postalCodes);
             } catch (error) {
                 return [];
             }
+        }
+
+        // Fonction pour mettre à jour la barre de progression
+        function updateProgress(current, total, message = '') {
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const loadingText = document.getElementById('loadingText');
+
+            if (progressContainer && progressBar && progressText) {
+                progressContainer.style.display = 'block';
+                const percent = Math.round((current / total) * 100);
+                progressBar.style.width = percent + '%';
+                progressText.textContent = `${percent}% (${current}/${total})`;
+
+                if (loadingText && message) {
+                    loadingText.textContent = message;
+                }
+            }
+        }
+
+        // Fonction pour géocoder par lots en parallèle
+        async function geocodeBatch(dpeList, userLocation, searchRadius, batchSize = 10) {
+            const geocodedData = [];
+            const total = dpeList.length;
+            let processed = 0;
+
+            // Traiter par lots de batchSize adresses
+            for (let i = 0; i < total; i += batchSize) {
+                const batch = dpeList.slice(i, Math.min(i + batchSize, total));
+
+                // Géocoder toutes les adresses du lot en parallèle
+                const batchPromises = batch.map(async (dpe) => {
+                    if (!dpe.adresse_brut || !dpe.code_postal_brut) {
+                        return null;
+                    }
+
+                    const coords = await geocodeAddress(dpe.adresse_brut, dpe.code_postal_brut);
+
+                    if (coords) {
+                        const distance = calculateDistance(
+                            userLocation.lat,
+                            userLocation.lon,
+                            coords.lat,
+                            coords.lng
+                        );
+
+                        // Ne garder que les biens dans le rayon
+                        if (distance <= searchRadius) {
+                            dpe._distance = distance;
+                            dpe._coords = coords;
+                            return dpe;
+                        }
+                    }
+                    return null;
+                });
+
+                const batchResults = await Promise.all(batchPromises);
+
+                // Ajouter les résultats valides
+                batchResults.forEach(result => {
+                    if (result) {
+                        geocodedData.push(result);
+                    }
+                });
+
+                processed += batch.length;
+                updateProgress(processed, total, `🗺️ Géocodage des adresses... (${geocodedData.length} trouvés dans le rayon)`);
+
+                // Petit délai entre les lots pour ne pas surcharger l'API
+                if (i + batchSize < total) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+
+            return geocodedData;
         }
 
         async function searchDPE() {
@@ -2213,40 +2519,24 @@
 
                 // NOUVEAU: SI RECHERCHE GÉOLOCALISÉE, FILTRER PAR DISTANCE GPS PRÉCISE
                 if (isGeoSearch && userLocation) {
-                    showToast('🗺️ Géocodage et calcul des distances...', 3000);
-                    
-                    const geocodedData = [];
                     const maxGeocode = Math.min(currentData.length, 150);
-                    
-                    for (let i = 0; i < maxGeocode; i++) {
-                        const dpe = currentData[i];
-                        
-                        if (dpe.adresse_brut && dpe.code_postal_brut) {
-                            const coords = await geocodeAddress(dpe.adresse_brut, dpe.code_postal_brut);
-                            
-                            if (coords) {
-                                const distance = calculateDistance(
-                                    userLocation.lat,
-                                    userLocation.lon,
-                                    coords.lat,
-                                    coords.lng
-                                );
-                                
-                                // NE GARDER QUE LES BIENS DANS LE RAYON
-                                if (distance <= searchRadius) {
-                                    dpe._distance = distance;
-                                    dpe._coords = coords;
-                                    geocodedData.push(dpe);
-                                }
-                            }
-                            
-                            await new Promise(resolve => setTimeout(resolve, 120));
-                        }
-                    }
-                    
+                    const dataToGeocode = currentData.slice(0, maxGeocode);
+
+                    showToast('🗺️ Démarrage du géocodage...', 2000);
+                    updateProgress(0, maxGeocode, '🗺️ Initialisation...');
+
+                    // Utiliser la nouvelle fonction de géocodage par lots (10 en parallèle)
+                    const geocodedData = await geocodeBatch(dataToGeocode, userLocation, searchRadius, 10);
+
                     currentData = geocodedData;
                     currentData.sort((a, b) => (a._distance || 999) - (b._distance || 999));
-                    
+
+                    // Masquer la barre de progression
+                    const progressContainer = document.getElementById('progressContainer');
+                    if (progressContainer) {
+                        progressContainer.style.display = 'none';
+                    }
+
                     const radiusText = searchRadius < 1 ? `${Math.round(searchRadius * 1000)}m` : `${searchRadius} km`;
                     showToast(`✅ ${geocodedData.length} biens dans un rayon de ${radiusText}`, 3000);
                 } else {
@@ -3459,6 +3749,876 @@
 
         function exportMissionPDF() {
             showToast('Export PDF (fonctionnalité à implémenter)');
+        }
+
+        // ============================================
+        // MODE GUIDAGE GPS
+        // ============================================
+
+        let guidedModeActive = false;
+        let guidedModeWatchId = null;
+        let currentGPSPosition = null;
+        let remainingSteps = [];
+        let currentStepIndex = 0;
+
+        function startGuidedMode() {
+            if (currentMissionData.length === 0) {
+                showToast('Générez d\'abord une mission');
+                return;
+            }
+
+            if (!navigator.geolocation) {
+                showToast('Géolocalisation non supportée par votre navigateur');
+                return;
+            }
+
+            guidedModeActive = true;
+            document.getElementById('guidedModePanel').style.display = 'block';
+
+            showToast('🧭 Activation du guidage GPS...');
+
+            // Demander la position en continu
+            guidedModeWatchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    currentGPSPosition = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+
+                    if (remainingSteps.length === 0) {
+                        // Première fois : réorganiser la mission depuis la position actuelle
+                        reorganizeMissionFromCurrentPosition();
+                    } else {
+                        // Mettre à jour l'affichage
+                        updateGuidedModeDisplay();
+                    }
+                },
+                (error) => {
+                    showToast('❌ Erreur GPS : ' + error.message);
+                    stopGuidedMode();
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 5000,
+                    timeout: 10000
+                }
+            );
+        }
+
+        function reorganizeMissionFromCurrentPosition() {
+            if (!currentGPSPosition) return;
+
+            // Filtrer les étapes non complétées
+            const uncompletedSteps = currentMissionData.filter((dpe, index) => {
+                const stepEl = document.getElementById(`mission-${index}`);
+                return !stepEl || !stepEl.classList.contains('completed');
+            });
+
+            if (uncompletedSteps.length === 0) {
+                showToast('🎉 Mission terminée !');
+                stopGuidedMode();
+                return;
+            }
+
+            // Trouver le bien le plus proche
+            let closestIndex = 0;
+            let minDistance = Infinity;
+
+            uncompletedSteps.forEach((dpe, index) => {
+                const coords = getPropertyCoords(dpe);
+                if (!coords) return;
+
+                const distance = calculateDistance(
+                    currentGPSPosition.lat,
+                    currentGPSPosition.lng,
+                    coords.lat,
+                    coords.lng
+                );
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestIndex = index;
+                }
+            });
+
+            // Réorganiser : plus proche en premier, puis optimiser le reste
+            const firstStep = uncompletedSteps[closestIndex];
+            const remaining = uncompletedSteps.filter((_, i) => i !== closestIndex);
+
+            // Optimiser le reste par proximité
+            const optimized = [firstStep];
+            let currentPos = firstStep;
+
+            while (remaining.length > 0) {
+                let nextClosestIndex = 0;
+                let nextMinDistance = Infinity;
+
+                remaining.forEach((dpe, index) => {
+                    const distance = calculateDistanceBetweenProperties(currentPos, dpe);
+                    if (distance < nextMinDistance) {
+                        nextMinDistance = distance;
+                        nextClosestIndex = index;
+                    }
+                });
+
+                currentPos = remaining[nextClosestIndex];
+                optimized.push(currentPos);
+                remaining.splice(nextClosestIndex, 1);
+            }
+
+            remainingSteps = optimized;
+            currentStepIndex = 0;
+
+            showToast(`🎯 Itinéraire optimisé depuis votre position : ${remainingSteps.length} étapes`);
+            updateGuidedModeDisplay();
+        }
+
+        function updateGuidedModeDisplay() {
+            if (!currentGPSPosition || remainingSteps.length === 0) return;
+
+            const currentStep = remainingSteps[currentStepIndex];
+            const coords = getPropertyCoords(currentStep);
+
+            if (!coords) {
+                document.getElementById('currentStepInfo').innerHTML = '❌ Coordonnées indisponibles pour cette étape';
+                return;
+            }
+
+            const distance = calculateDistance(
+                currentGPSPosition.lat,
+                currentGPSPosition.lng,
+                coords.lat,
+                coords.lng
+            );
+
+            // Calculer la direction (bearing)
+            const bearing = calculateBearing(
+                currentGPSPosition.lat,
+                currentGPSPosition.lng,
+                coords.lat,
+                coords.lng
+            );
+
+            const direction = getDirectionFromBearing(bearing);
+
+            // Affichage distance
+            let distanceText;
+            if (distance < 0.1) {
+                distanceText = `${Math.round(distance * 1000)} mètres`;
+            } else {
+                distanceText = `${distance.toFixed(1)} km`;
+            }
+
+            document.getElementById('currentStepInfo').innerHTML = `
+                📍 Étape ${currentStepIndex + 1} sur ${remainingSteps.length}
+            `;
+
+            document.getElementById('nextStepInfo').innerHTML = `
+                <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 10px;">
+                    ${direction} ${distanceText}
+                </div>
+                <div style="font-size: 1.1em; margin-bottom: 5px;">
+                    <strong>${currentStep.adresse_brut}</strong>
+                </div>
+                <div style="font-size: 0.9em; opacity: 0.9;">
+                    ${currentStep.commune || `CP ${currentStep.code_postal_brut}`} - Classe ${currentStep.classe_consommation_energie || 'N/A'}
+                </div>
+                ${distance < 0.05 ? '<div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.3); border-radius: 5px; font-weight: bold;">🎯 Vous êtes arrivé !</div>' : ''}
+            `;
+
+            // Auto-complétion si très proche (< 50m)
+            if (distance < 0.05) {
+                setTimeout(() => {
+                    if (confirm('Vous êtes arrivé à destination ! Marquer cette étape comme terminée ?')) {
+                        skipCurrentStep();
+                    }
+                }, 2000);
+            }
+        }
+
+        function calculateBearing(lat1, lng1, lat2, lng2) {
+            const toRad = Math.PI / 180;
+            const phi1 = lat1 * toRad;
+            const phi2 = lat2 * toRad;
+            const deltaLambda = (lng2 - lng1) * toRad;
+
+            const y = Math.sin(deltaLambda) * Math.cos(phi2);
+            const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLambda);
+
+            const theta = Math.atan2(y, x);
+            return ((theta * 180 / Math.PI) + 360) % 360; // En degrés
+        }
+
+        function getDirectionFromBearing(bearing) {
+            const directions = [
+                { arrow: '⬆️', text: 'Tout droit' },
+                { arrow: '↗️', text: 'Tout droit à droite' },
+                { arrow: '➡️', text: 'À droite' },
+                { arrow: '↘️', text: 'Demi-tour à droite' },
+                { arrow: '⬇️', text: 'Demi-tour' },
+                { arrow: '↙️', text: 'Demi-tour à gauche' },
+                { arrow: '⬅️', text: 'À gauche' },
+                { arrow: '↖️', text: 'Tout droit à gauche' }
+            ];
+
+            const index = Math.round(bearing / 45) % 8;
+            return directions[index].arrow + ' ' + directions[index].text;
+        }
+
+        function skipCurrentStep() {
+            if (remainingSteps.length === 0) return;
+
+            // Marquer comme complété
+            const currentStep = remainingSteps[currentStepIndex];
+            const originalIndex = currentMissionData.indexOf(currentStep);
+            if (originalIndex !== -1) {
+                completeMissionStep(originalIndex);
+            }
+
+            currentStepIndex++;
+
+            if (currentStepIndex >= remainingSteps.length) {
+                showToast('🎉 Toutes les étapes sont terminées !');
+                stopGuidedMode();
+                return;
+            }
+
+            updateGuidedModeDisplay();
+        }
+
+        function stopGuidedMode() {
+            guidedModeActive = false;
+
+            if (guidedModeWatchId !== null) {
+                navigator.geolocation.clearWatch(guidedModeWatchId);
+                guidedModeWatchId = null;
+            }
+
+            document.getElementById('guidedModePanel').style.display = 'none';
+            currentGPSPosition = null;
+            remainingSteps = [];
+            currentStepIndex = 0;
+
+            showToast('Mode guidage arrêté');
+        }
+
+        // ============================================
+        // ALERTES PUSH - SURVEILLANCE NOUVEAUX BIENS
+        // ============================================
+
+        let notificationPermission = false;
+        let alertMonitorInterval = null;
+        let lastCheckedDPEIds = new Set();
+
+        function initializeAlertSettings() {
+            // Charger les paramètres sauvegardés
+            const settings = JSON.parse(localStorage.getItem('alertSettings') || '{}');
+
+            if (settings.enabled) {
+                document.getElementById('enableNotifications').checked = true;
+                document.getElementById('alertSettings').style.display = 'block';
+            }
+
+            if (settings.postalCodes) {
+                document.getElementById('alertPostalCodes').value = settings.postalCodes;
+            }
+
+            if (settings.frequency) {
+                document.getElementById('alertFrequency').value = settings.frequency;
+            }
+
+            if (settings.classes) {
+                document.querySelectorAll('.alert-class-filter').forEach(cb => {
+                    cb.checked = settings.classes.includes(cb.value);
+                });
+            }
+
+            document.getElementById('alertOnlyNew').checked = settings.onlyNew !== false;
+            document.getElementById('alertExcludeSeen').checked = settings.excludeSeen !== false;
+
+            // Vérifier si les notifications sont déjà actives
+            if ('Notification' in window) {
+                updateNotificationStatus();
+            }
+
+            // Redémarrer la surveillance si elle était active
+            if (settings.enabled && settings.postalCodes) {
+                startAlertMonitoring();
+            }
+        }
+
+        async function toggleNotifications() {
+            const enabled = document.getElementById('enableNotifications').checked;
+
+            if (enabled) {
+                if (!('Notification' in window)) {
+                    showToast('❌ Votre navigateur ne supporte pas les notifications');
+                    document.getElementById('enableNotifications').checked = false;
+                    return;
+                }
+
+                const permission = await Notification.requestPermission();
+
+                if (permission === 'granted') {
+                    notificationPermission = true;
+                    document.getElementById('alertSettings').style.display = 'block';
+                    updateNotificationStatus();
+                    showToast('✅ Notifications activées !');
+
+                    // Notification de test
+                    new Notification('🏠 2A Immo Prospection', {
+                        body: 'Les alertes sont maintenant activées !',
+                        icon: 'https://lilydpe.github.io/2A-Immo-Prospection/icon.png',
+                        badge: 'https://lilydpe.github.io/2A-Immo-Prospection/badge.png'
+                    });
+                } else {
+                    showToast('❌ Permission refusée. Activez les notifications dans les paramètres du navigateur.');
+                    document.getElementById('enableNotifications').checked = false;
+                    updateNotificationStatus();
+                }
+            } else {
+                document.getElementById('alertSettings').style.display = 'none';
+                stopAlertMonitoring();
+                updateNotificationStatus();
+                showToast('Alertes désactivées');
+            }
+        }
+
+        function updateNotificationStatus() {
+            const statusDiv = document.getElementById('notificationStatus');
+
+            if (!('Notification' in window)) {
+                statusDiv.innerHTML = '<div style="background: #ffebee; color: #c62828; padding: 10px; border-radius: 5px;">❌ Notifications non supportées</div>';
+                return;
+            }
+
+            const permission = Notification.permission;
+
+            if (permission === 'granted') {
+                statusDiv.innerHTML = '<div style="background: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 5px;">✅ Notifications autorisées</div>';
+                document.getElementById('alertsBadge').style.display = 'inline-block';
+            } else if (permission === 'denied') {
+                statusDiv.innerHTML = '<div style="background: #ffebee; color: #c62828; padding: 10px; border-radius: 5px;">❌ Notifications bloquées. Modifiez les paramètres du navigateur.</div>';
+            } else {
+                statusDiv.innerHTML = '<div style="background: #fff3e0; color: #e65100; padding: 10px; border-radius: 5px;">⏳ Cliquez pour autoriser les notifications</div>';
+            }
+        }
+
+        function saveAlertSettings() {
+            const postalCodes = document.getElementById('alertPostalCodes').value.trim();
+
+            if (!postalCodes) {
+                showToast('⚠️ Veuillez entrer au moins un code postal');
+                return;
+            }
+
+            const selectedClasses = Array.from(document.querySelectorAll('.alert-class-filter:checked')).map(cb => cb.value);
+
+            const settings = {
+                enabled: document.getElementById('enableNotifications').checked,
+                postalCodes: postalCodes,
+                frequency: parseInt(document.getElementById('alertFrequency').value),
+                onlyNew: document.getElementById('alertOnlyNew').checked,
+                excludeSeen: document.getElementById('alertExcludeSeen').checked,
+                classes: selectedClasses
+            };
+
+            localStorage.setItem('alertSettings', JSON.stringify(settings));
+            showToast('✅ Paramètres sauvegardés !');
+
+            // Redémarrer la surveillance
+            if (settings.enabled) {
+                startAlertMonitoring();
+            }
+        }
+
+        function startAlertMonitoring() {
+            stopAlertMonitoring(); // Arrêter l'ancien intervalle s'il existe
+
+            const settings = JSON.parse(localStorage.getItem('alertSettings') || '{}');
+
+            if (!settings.enabled || !settings.postalCodes) return;
+
+            const frequency = settings.frequency || 30; // minutes
+            const frequencyMs = frequency * 60 * 1000;
+
+            // Première vérification immédiate
+            checkForNewDPE();
+
+            // Puis vérifications périodiques
+            alertMonitorInterval = setInterval(checkForNewDPE, frequencyMs);
+
+            const monitorStatus = document.getElementById('alertMonitorStatus');
+            if (monitorStatus) {
+                monitorStatus.innerHTML = `✅ Surveillance active - Prochaine vérification dans ${frequency} min<br><small>Zones: ${settings.postalCodes}</small>`;
+            }
+
+            showToast(`🔔 Surveillance activée (vérif. toutes les ${frequency} min)`);
+        }
+
+        function stopAlertMonitoring() {
+            if (alertMonitorInterval) {
+                clearInterval(alertMonitorInterval);
+                alertMonitorInterval = null;
+            }
+
+            const monitorStatus = document.getElementById('alertMonitorStatus');
+            if (monitorStatus) {
+                monitorStatus.innerHTML = '⏸️ Surveillance en pause';
+            }
+        }
+
+        async function checkForNewDPE() {
+            const settings = JSON.parse(localStorage.getItem('alertSettings') || '{}');
+
+            if (!settings.enabled || !settings.postalCodes) return;
+
+            try {
+                const codesPostaux = settings.postalCodes.split(/[,;\s]+/).map(cp => cp.trim()).filter(cp => cp.length > 0);
+
+                // Date de référence
+                let dateDebut, dateFin;
+                if (settings.onlyNew) {
+                    // Dernières 24h
+                    const now = new Date();
+                    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    dateDebut = yesterday.toISOString().split('T')[0];
+                    dateFin = now.toISOString().split('T')[0];
+                } else {
+                    // Semaine en cours
+                    const now = new Date();
+                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    dateDebut = weekAgo.toISOString().split('T')[0];
+                    dateFin = now.toISOString().split('T')[0];
+                }
+
+                const url = 'https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant/lines';
+                const postalCodesQuery = codesPostaux.map(cp => `code_postal_brut:${cp}`).join(' OR ');
+                let qs = `(${postalCodesQuery}) AND date_etablissement_dpe:[${dateDebut} TO ${dateFin}]`;
+
+                const params = new URLSearchParams({
+                    size: 50,
+                    qs: qs
+                });
+
+                const response = await fetch(`${url}?${params}`);
+                if (!response.ok) return;
+
+                const data = await response.json();
+                let newDPEs = data.results || [];
+
+                // Filtrer par classe énergétique
+                if (settings.classes && settings.classes.length > 0) {
+                    newDPEs = newDPEs.filter(dpe => settings.classes.includes(dpe.classe_consommation_energie));
+                }
+
+                // Exclure les DPE déjà vus
+                if (settings.excludeSeen) {
+                    const seenProperties = JSON.parse(localStorage.getItem('seenProperties') || '{}');
+                    const userSeenIds = new Set(Object.keys(seenProperties[currentUser.uid] || {}));
+                    newDPEs = newDPEs.filter(dpe => !userSeenIds.has(dpe._id));
+                }
+
+                // Trouver les DPE vraiment nouveaux (pas encore notifiés)
+                const trulyNewDPEs = newDPEs.filter(dpe => !lastCheckedDPEIds.has(dpe._id));
+
+                // Mettre à jour le cache des IDs
+                newDPEs.forEach(dpe => lastCheckedDPEIds.add(dpe._id));
+
+                // Limiter la taille du cache
+                if (lastCheckedDPEIds.size > 500) {
+                    const idsArray = Array.from(lastCheckedDPEIds);
+                    lastCheckedDPEIds = new Set(idsArray.slice(-300));
+                }
+
+                // Envoyer notifications pour les nouveaux DPE
+                if (trulyNewDPEs.length > 0 && Notification.permission === 'granted') {
+                    sendNewDPENotifications(trulyNewDPEs);
+                }
+
+                // Mettre à jour le statut
+                const monitorStatus = document.getElementById('alertMonitorStatus');
+                if (monitorStatus) {
+                    const now = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    const nextCheck = new Date(Date.now() + (settings.frequency || 30) * 60 * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    monitorStatus.innerHTML = `✅ Dernière vérif: ${now} - Prochain: ${nextCheck}<br><small>${trulyNewDPEs.length} nouveau(x) bien(s) trouvé(s)</small>`;
+                }
+
+            } catch (error) {
+                console.error('Erreur vérification nouveaux DPE:', error);
+            }
+        }
+
+        function sendNewDPENotifications(newDPEs) {
+            if (newDPEs.length === 0) return;
+
+            // Grouper par commune si beaucoup de DPE
+            if (newDPEs.length === 1) {
+                const dpe = newDPEs[0];
+                new Notification(`🏠 Nouveau bien ${dpe.commune || 'CP ' + dpe.code_postal_brut}`, {
+                    body: `${dpe.adresse_brut}\nClasse ${dpe.classe_consommation_energie || 'N/A'}`,
+                    icon: 'https://lilydpe.github.io/2A-Immo-Prospection/icon.png',
+                    tag: 'new-dpe-' + dpe._id,
+                    requireInteraction: false
+                });
+            } else if (newDPEs.length <= 5) {
+                newDPEs.forEach(dpe => {
+                    new Notification(`🏠 Nouveau bien ${dpe.commune || 'CP ' + dpe.code_postal_brut}`, {
+                        body: `${dpe.adresse_brut}\nClasse ${dpe.classe_consommation_energie || 'N/A'}`,
+                        icon: 'https://lilydpe.github.io/2A-Immo-Prospection/icon.png',
+                        tag: 'new-dpe-' + dpe._id,
+                        requireInteraction: false
+                    });
+                });
+            } else {
+                // Notification groupée
+                const communes = [...new Set(newDPEs.map(dpe => dpe.commune || 'CP ' + dpe.code_postal_brut))];
+                new Notification(`🏠 ${newDPEs.length} nouveaux biens disponibles !`, {
+                    body: `Dans: ${communes.slice(0, 3).join(', ')}${communes.length > 3 ? '...' : ''}`,
+                    icon: 'https://lilydpe.github.io/2A-Immo-Prospection/icon.png',
+                    tag: 'new-dpe-batch',
+                    requireInteraction: true
+                });
+            }
+        }
+
+        // ============================================
+        // ASSISTANT IA - SCORING & MESSAGES
+        // ============================================
+
+        function calculatePropertyScore(dpe) {
+            let score = 0;
+            const reasons = [];
+
+            // 1. Classe énergétique (max 30 points)
+            const classeScores = { 'G': 30, 'F': 25, 'E': 20, 'D': 10, 'C': 5, 'B': 2, 'A': 1 };
+            const classeScore = classeScores[dpe.classe_consommation_energie] || 0;
+            score += classeScore;
+            if (classeScore >= 20) {
+                reasons.push(`Passoire énergétique (${dpe.classe_consommation_energie})`);
+            }
+
+            // 2. Date du DPE - Plus c'est récent, mieux c'est (max 20 points)
+            if (dpe.date_etablissement_dpe) {
+                const dpeDate = new Date(dpe.date_etablissement_dpe);
+                const daysSince = (Date.now() - dpeDate.getTime()) / (1000 * 60 * 60 * 24);
+                if (daysSince < 30) {
+                    score += 20;
+                    reasons.push('DPE très récent (< 30j)');
+                } else if (daysSince < 90) {
+                    score += 15;
+                    reasons.push('DPE récent (< 3 mois)');
+                } else if (daysSince < 180) {
+                    score += 10;
+                }
+            }
+
+            // 3. Type de bien (max 15 points)
+            const typeBien = (dpe.tr002_type_batiment_description || '').toLowerCase();
+            if (typeBien.includes('maison')) {
+                score += 15;
+                reasons.push('Maison individuelle (fort potentiel)');
+            } else if (typeBien.includes('appartement') || typeBien.includes('immeuble')) {
+                score += 10;
+                reasons.push('Appartement/Immeuble');
+            }
+
+            // 4. Surface habitable (max 15 points)
+            const surface = parseFloat(dpe.surface_habitable_logement);
+            if (surface) {
+                if (surface >= 80 && surface <= 150) {
+                    score += 15;
+                    reasons.push(`Surface optimale (${surface}m²)`);
+                } else if (surface >= 50 && surface < 80) {
+                    score += 10;
+                } else if (surface > 150 && surface <= 200) {
+                    score += 12;
+                    reasons.push(`Grande surface (${surface}m²)`);
+                }
+            }
+
+            // 5. Consommation énergétique élevée (max 10 points)
+            const conso = parseFloat(dpe.consommation_energie);
+            if (conso > 400) {
+                score += 10;
+                reasons.push('Très forte consommation');
+            } else if (conso > 300) {
+                score += 7;
+            }
+
+            // 6. Statut prospection (max 10 points)
+            const status = getPropertyStatus(dpe);
+            if (status === 'nouveau') {
+                score += 10;
+                reasons.push('Jamais contacté');
+            } else if (status === 'interesse') {
+                score += 5;
+                reasons.push('Déjà intéressé !');
+            }
+
+            // Score final sur 100
+            return {
+                score: Math.min(100, score),
+                grade: score >= 70 ? '🔥 Chaud' : score >= 50 ? '⭐ Bon' : score >= 30 ? '👍 Moyen' : '❄️ Faible',
+                reasons: reasons
+            };
+        }
+
+        function runAIScoring() {
+            if (filteredData.length === 0) {
+                showToast('Aucun bien à analyser. Faites d\'abord une recherche.');
+                return;
+            }
+
+            showToast('🤖 Analyse en cours...');
+
+            // Calculer les scores
+            const scoredProperties = filteredData.map(dpe => ({
+                dpe: dpe,
+                scoring: calculatePropertyScore(dpe)
+            }));
+
+            // Trier par score décroissant
+            scoredProperties.sort((a, b) => b.scoring.score - a.scoring.score);
+
+            // Afficher les résultats
+            const resultsDiv = document.getElementById('scoringResults');
+            const top10 = scoredProperties.slice(0, 10);
+
+            resultsDiv.innerHTML = `
+                <div style="padding: 15px; background: #e8f5e9; border-radius: 8px; margin-bottom: 15px;">
+                    <strong>✅ ${filteredData.length} biens analysés</strong><br>
+                    <small>Voici les 10 meilleurs prospects</small>
+                </div>
+                ${top10.map((item, index) => `
+                    <div style="padding: 12px; background: ${index < 3 ? '#fff3e0' : '#f5f5f5'}; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${item.scoring.score >= 70 ? '#e74c3c' : item.scoring.score >= 50 ? '#f39c12' : '#95a5a6'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong>${index + 1}. ${item.dpe.adresse_brut}</strong>
+                            <span style="background: ${item.scoring.score >= 70 ? '#e74c3c' : item.scoring.score >= 50 ? '#f39c12' : '#95a5a6'}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">
+                                ${item.scoring.score}/100
+                            </span>
+                        </div>
+                        <div style="font-size: 0.85em; color: #666; margin-bottom: 6px;">
+                            ${item.dpe.commune || 'CP ' + item.dpe.code_postal_brut} - ${item.scoring.grade}
+                        </div>
+                        <div style="font-size: 0.8em; color: #555;">
+                            ${item.scoring.reasons.map(r => `✓ ${r}`).join('<br>')}
+                        </div>
+                        <button class="btn btn-small btn-primary" onclick="viewPropertyDetails(${filteredData.indexOf(item.dpe)})" style="margin-top: 8px;">
+                            👁️ Voir le bien
+                        </button>
+                    </div>
+                `).join('')}
+            `;
+
+            // Mettre à jour le sélecteur de biens
+            updateAIPropertySelect(scoredProperties);
+
+            // Mettre à jour les top prospects
+            updateTopProspects(scoredProperties.slice(0, 5));
+
+            showToast('✅ Analyse terminée !');
+        }
+
+        function updateAIPropertySelect(scoredProperties) {
+            const select = document.getElementById('aiPropertySelect');
+            select.innerHTML = '<option value="">-- Choisir un bien --</option>' +
+                scoredProperties.slice(0, 20).map((item, index) => {
+                    const dpe = item.dpe;
+                    return `<option value="${filteredData.indexOf(dpe)}">${dpe.adresse_brut} (Score: ${item.scoring.score}/100)</option>`;
+                }).join('');
+        }
+
+        function updateTopProspects(topProperties) {
+            const div = document.getElementById('topProspects');
+            if (topProperties.length === 0) {
+                div.innerHTML = '<p style="color: #999; text-align: center;">Lancez d\'abord l\'analyse des biens</p>';
+                return;
+            }
+
+            div.innerHTML = topProperties.map((item, index) => `
+                <div style="padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong style="font-size: 1.1em;">🏆 #${index + 1} ${item.dpe.adresse_brut}</strong>
+                        <span style="background: rgba(255,255,255,0.3); padding: 4px 10px; border-radius: 20px; font-weight: bold;">
+                            ${item.scoring.score}/100
+                        </span>
+                    </div>
+                    <div style="opacity: 0.9; font-size: 0.9em; margin-bottom: 8px;">
+                        ${item.dpe.commune || 'CP ' + item.dpe.code_postal_brut} - Classe ${item.dpe.classe_consommation_energie || 'N/A'}
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-small" style="background: white; color: #667eea; flex: 1;" onclick="generateMessageForProperty(${filteredData.indexOf(item.dpe)})">
+                            ✉️ Message
+                        </button>
+                        <button class="btn btn-small" style="background: rgba(255,255,255,0.2); color: white; flex: 1;" onclick="viewPropertyDetails(${filteredData.indexOf(item.dpe)})">
+                            👁️ Détails
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function generateMessageForProperty(index) {
+            document.getElementById('aiPropertySelect').value = index;
+            switchScreen('ai');
+            setTimeout(() => generateMessage(), 300);
+        }
+
+        function generateMessage() {
+            const selectEl = document.getElementById('aiPropertySelect');
+            const index = parseInt(selectEl.value);
+
+            if (isNaN(index) || index < 0) {
+                document.getElementById('generatedMessage').style.display = 'none';
+                return;
+            }
+
+            const dpe = filteredData[index];
+            const messageType = document.getElementById('messageType').value;
+            const tone = document.getElementById('messageTone').value;
+
+            const message = createPersonalizedMessage(dpe, messageType, tone);
+
+            document.getElementById('messageContent').textContent = message;
+            document.getElementById('generatedMessage').style.display = 'block';
+
+            // Générer aussi les argumentaires
+            generateArguments(dpe);
+        }
+
+        function createPersonalizedMessage(dpe, type, tone) {
+            const address = dpe.adresse_brut || 'votre bien';
+            const commune = dpe.commune || '';
+            const classe = dpe.classe_consommation_energie || 'N/A';
+            const surface = dpe.surface_habitable_logement ? `${dpe.surface_habitable_logement}m²` : '';
+            const conso = dpe.consommation_energie ? Math.round(dpe.consommation_energie) : '';
+
+            let greeting, intro, body, closing, signature;
+
+            // Salutation selon le ton
+            if (tone === 'professional') {
+                greeting = 'Madame, Monsieur,';
+                signature = 'Cordialement,\n[Votre nom]\n2A Immo Prospection\n[Votre téléphone]';
+            } else if (tone === 'friendly') {
+                greeting = 'Bonjour,';
+                signature = 'Bien cordialement,\n[Votre prénom]\n[Votre téléphone]';
+            } else {
+                greeting = 'Bonjour,';
+                signature = 'Cordialement,\n[Votre nom]\n[Votre téléphone]';
+            }
+
+            // Corps du message selon le type
+            if (type === 'first-contact') {
+                intro = `Je me permets de vous contacter concernant votre bien situé ${address}${commune ? ' à ' + commune : ''}.`;
+                body = `D'après le diagnostic de performance énergétique (classe ${classe}${conso ? ', ' + conso + ' kWh/m²/an' : ''}), votre logement pourrait bénéficier d'une rénovation énergétique.\n\nNous accompagnons les propriétaires dans leurs projets de rénovation et pouvons vous aider à :\n• Réduire significativement vos factures d'énergie\n• Améliorer votre confort thermique\n• Valoriser votre patrimoine\n• Bénéficier des aides de l'État (MaPrimeRénov', CEE, etc.)`;
+                closing = 'Seriez-vous disponible pour un échange téléphonique afin d\'étudier ensemble les possibilités d\'amélioration de votre bien ?';
+            } else if (type === 'follow-up') {
+                intro = `Je reviens vers vous suite à mon précédent message concernant votre bien ${address}.`;
+                body = `Les aides à la rénovation énergétique sont particulièrement avantageuses en ce moment, et votre logement (classe ${classe}) est éligible à plusieurs dispositifs.\n\nNous pouvons vous proposer un audit gratuit pour évaluer précisément le potentiel d'amélioration et les aides dont vous pouvez bénéficier.`;
+                closing = 'Auriez-vous quelques minutes cette semaine pour en discuter ?';
+            } else if (type === 'urgency') {
+                intro = `IMPORTANT : Votre bien ${address} est concerné par les nouvelles réglementations sur les passoires énergétiques.`;
+                body = `À partir de 2025, les logements classés G ne pourront plus être loués. La classe ${classe} de votre bien signifie qu'${classe === 'G' || classe === 'F' ? 'il est prioritaire d\'agir' : 'une amélioration serait bénéfique'}.\n\nBonne nouvelle : des aides importantes sont disponibles pour financer vos travaux de rénovation (jusqu'à 90% du montant selon vos revenus).`;
+                closing = 'Je peux vous rappeler rapidement pour vous présenter les solutions adaptées à votre situation. Quand seriez-vous disponible ?';
+            } else { // benefit
+                intro = `Propriétaire ${address}${commune ? ' à ' + commune : ''}, voici ce que vous pourriez gagner avec une rénovation énergétique :`;
+                body = `✓ Jusqu'à -60% sur vos factures de chauffage\n✓ Un logement plus confortable été comme hiver\n✓ Une valeur immobilière augmentée de 15 à 25%\n✓ Des aides financières couvrant jusqu'à 90% des travaux\n\nVotre bien (classe ${classe}${surface ? ', ' + surface : ''}) a un excellent potentiel d'amélioration.`;
+                closing = 'Je serais ravi de vous présenter un plan de rénovation personnalisé. Êtes-vous intéressé(e) par un premier échange ?';
+            }
+
+            return `${greeting}\n\n${intro}\n\n${body}\n\n${closing}\n\n${signature}`;
+        }
+
+        function generateArguments(dpe) {
+            const classe = dpe.classe_consommation_energie || 'N/A';
+            const surface = parseFloat(dpe.surface_habitable_logement);
+            const conso = parseFloat(dpe.consommation_energie);
+            const typeBien = (dpe.tr002_type_batiment_description || '').toLowerCase();
+
+            const arguments = [];
+
+            // Arguments selon la classe
+            if (classe === 'G' || classe === 'F') {
+                arguments.push({
+                    icon: '🚨',
+                    title: 'Urgence réglementaire',
+                    text: `Les logements classe ${classe} seront interdits à la location dès 2025-2028. Anticiper permet d'éviter la dévaluation.`
+                });
+            }
+
+            if (classe === 'E' || classe === 'F' || classe === 'G') {
+                arguments.push({
+                    icon: '💰',
+                    title: 'Aides maximales',
+                    text: 'MaPrimeRénov\' Sérénité peut financer jusqu\'à 90% des travaux pour les ménages modestes, 75% pour les autres.'
+                });
+            }
+
+            // Arguments selon la consommation
+            if (conso > 300) {
+                const economy = Math.round((conso - 150) * surface * 0.15 / 100) * 100;
+                arguments.push({
+                    icon: '📉',
+                    title: 'Économies importantes',
+                    text: `Avec ${Math.round(conso)} kWh/m²/an, vous pourriez économiser environ ${economy}€/an en chauffage après rénovation.`
+                });
+            }
+
+            // Arguments selon le type
+            if (typeBien.includes('maison')) {
+                arguments.push({
+                    icon: '🏠',
+                    title: 'Maison : travaux simples',
+                    text: 'Isolation des combles et murs + changement de chauffage = gains rapides. ROI en 7-10 ans.'
+                });
+            }
+
+            // Arguments génériques
+            arguments.push({
+                icon: '🌡️',
+                title: 'Confort thermique',
+                text: 'Fini les courants d\'air et les pièces froides. Une maison bien isolée maintient 19-20°C naturellement.'
+            });
+
+            arguments.push({
+                icon: '📈',
+                title: 'Valorisation du bien',
+                text: 'Un DPE passant de F à C augmente la valeur du bien de 15 à 25% selon les études notariales.'
+            });
+
+            // Afficher
+            const div = document.getElementById('aiArguments');
+            div.innerHTML = arguments.map(arg => `
+                <div style="padding: 12px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--primary);">
+                    <div style="font-weight: 600; margin-bottom: 5px;">${arg.icon} ${arg.title}</div>
+                    <div style="font-size: 0.9em; color: #666;">${arg.text}</div>
+                </div>
+            `).join('');
+        }
+
+        function copyMessage() {
+            const message = document.getElementById('messageContent').textContent;
+            navigator.clipboard.writeText(message).then(() => {
+                showToast('📋 Message copié !');
+            }).catch(() => {
+                showToast('❌ Erreur de copie');
+            });
+        }
+
+        function viewPropertyDetails(index) {
+            switchScreen('results');
+            setTimeout(() => {
+                const resultCard = document.querySelectorAll('.result-card')[index];
+                if (resultCard) {
+                    resultCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    resultCard.style.boxShadow = '0 0 20px rgba(231, 76, 60, 0.5)';
+                    setTimeout(() => {
+                        resultCard.style.boxShadow = '';
+                    }, 2000);
+                }
+            }, 300);
         }
 
         // ============================================
