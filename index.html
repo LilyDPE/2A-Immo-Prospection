@@ -2175,18 +2175,34 @@
             
             if (dpeWithoutInsee.length > 0) {
                 console.log(`⚠️ ${dpeWithoutInsee.length} DPE sans code INSEE, tentative de géocodage...`);
-                
-                for (const dpe of dpeWithoutInsee.slice(0, maxGeocode)) {
-                    if (dpe.adresse_brut && dpe.code_postal_brut) {
-                        const result = await getInseeFromAddress(dpe.adresse_brut, dpe.code_postal_brut);
-                        if (result) {
-                            dpe._code_insee_recovered = result.codeInsee;
-                            geocodeCount++;
+
+                // OPTIMISATION: Traiter par lots de 10 en parallèle au lieu de séquentiel
+                const batchSize = 10;
+                const toGeocode = dpeWithoutInsee.slice(0, maxGeocode);
+
+                for (let i = 0; i < toGeocode.length; i += batchSize) {
+                    const batch = toGeocode.slice(i, Math.min(i + batchSize, toGeocode.length));
+
+                    const batchPromises = batch.map(async (dpe) => {
+                        if (dpe.adresse_brut && dpe.code_postal_brut) {
+                            const result = await getInseeFromAddress(dpe.adresse_brut, dpe.code_postal_brut);
+                            if (result) {
+                                dpe._code_insee_recovered = result.codeInsee;
+                                return 1;
+                            }
                         }
+                        return 0;
+                    });
+
+                    const results = await Promise.all(batchPromises);
+                    geocodeCount += results.reduce((a, b) => a + b, 0);
+
+                    // Petit délai entre les lots
+                    if (i + batchSize < toGeocode.length) {
                         await new Promise(resolve => setTimeout(resolve, 50));
                     }
                 }
-                
+
                 console.log(`✅ ${geocodeCount} codes INSEE récupérés par géocodage`);
             }
             
